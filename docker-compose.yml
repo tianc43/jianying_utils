@@ -8,16 +8,23 @@ services:
       - "8000:8000"
     environment:
       - JIANYING_DRAFTS_DIR=/app/drafts
+      - WORKERS=4                          # gunicorn worker 数量
     volumes:
-      # 持久化草稿数据
-      - drafts_data:/app/drafts
+      - drafts_data:/app/drafts            # 草稿持久化
     restart: unless-stopped
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
 volumes:
   drafts_data:
