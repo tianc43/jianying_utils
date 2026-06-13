@@ -143,6 +143,8 @@ uvicorn jianying_utils.server:app --host 0.0.0.0 --port 8000
 | | `GET /material/audio-duration` | 获取音频时长 |
 | **工具** | `POST /util/time/parse` | 解析时间 |
 | | `POST /util/time/format` | 格式化时间 |
+| | `POST /util/tts` | 文本转语音（Edge-TTS） |
+| | `GET /util/tts/voices` | 发音人列表 |
 
 ## 统一响应格式
 

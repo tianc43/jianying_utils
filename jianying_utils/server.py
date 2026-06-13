@@ -25,7 +25,7 @@ from jianying_utils import (
     DraftManager, TrackManager, VideoTool, AudioTool,
     TextTool, EffectTool, StickerTool, AnimationTool,
     KeyframeTool, TransitionTool, MaterialTool,
-    MetadataQuery, TimeTool, ExportTool
+    MetadataQuery, TimeTool, ExportTool, TTSTool
 )
 from jianying_utils import _context
 
@@ -258,6 +258,32 @@ class TimeParse(BaseModel):
 
 class TimeFormat(BaseModel):
     microseconds: int = Field(..., description="微秒数")
+
+class TTSRequest(BaseModel):
+    text: str = Field(..., description="要合成的文本（支持 SSML）")
+    voice: str = Field("zh-CN-XiaoxiaoNeural", description="发音人 ShortName")
+    rate: str = Field("+0%", description="语速，如 +20% 加快，-10% 减慢")
+    pitch: str = Field("+0Hz", description="音调，如 +5Hz 升高，-5Hz 降低")
+    output_path: Optional[str] = Field(None, description="输出文件路径（可选）")
+
+class TTSVoiceItem(BaseModel):
+    ShortName: str = Field(..., description="发音人标识")
+    DisplayName: str = Field(..., description="显示名称")
+    Gender: str = Field(..., description="性别")
+    Style: str = Field(..., description="风格描述")
+
+class TTSSynthesizeResponse(BaseModel):
+    success: bool = Field(True, description="操作是否成功")
+    message: str = Field("", description="操作结果消息")
+    audio_path: str = Field("", description="音频文件路径")
+    duration_seconds: float = Field(0.0, description="合成耗时（秒）")
+    voice: str = Field("", description="使用的发音人")
+
+class TTSVoicesResponse(BaseModel):
+    success: bool = Field(True, description="操作是否成功")
+    message: str = Field("", description="操作结果消息")
+    voices: List[TTSVoiceItem] = Field(default_factory=list, description="发音人列表")
+    count: int = Field(0, description="发音人数量")
 
 class SimpleWorkflow(BaseModel):
     width: int = Field(1920, description="视频宽度")
@@ -811,6 +837,26 @@ def time_parse(body: TimeParse):
 def time_format(body: TimeFormat):
     """将微秒数格式化为可读时间字符串"""
     return TimeTool.format_time(body.microseconds)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TTS 语音合成
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.post("/util/tts", tags=["工具"], summary="文本转语音", response_model=TTSSynthesizeResponse)
+def tts_synthesize(body: TTSRequest):
+    """将文本合成为语音（Edge-TTS，免费）"""
+    return TTSTool.synthesize(
+        text=body.text,
+        voice=body.voice,
+        rate=body.rate,
+        pitch=body.pitch,
+        output_path=body.output_path,
+    )
+
+@app.get("/util/tts/voices", tags=["工具"], summary="发音人列表", response_model=TTSVoicesResponse)
+def tts_voices():
+    """获取可用的发音人列表"""
+    return TTSTool.list_voices()
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 启动

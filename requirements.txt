@@ -6,3 +6,4 @@ pyjianyingdraft>=0.2.6
 imageio>=2.31.0
 pymediainfo>=6.0.0
 uiautomation
+edge-tts>=6.0.0

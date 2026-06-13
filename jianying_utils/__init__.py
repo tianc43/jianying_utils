@@ -19,6 +19,7 @@
     - MetadataQuery: 元数据查询（枚举列表）
     - TimeTool: 时间工具（解析/格式化/转换）
     - ExportTool: 导出工具（JSON序列化）
+    - TTSTool: TTS 语音合成（Edge-TTS 免费接口）
 """
 
 from .draft_manager import DraftManager
@@ -36,6 +37,7 @@ from .material_tool import MaterialTool
 from .metadata_query import MetadataQuery
 from .time_tool import TimeTool
 from .export_tool import ExportTool
+from .tts_tool import TTSTool
 
 __all__ = [
     "DraftManager",
@@ -53,6 +55,7 @@ __all__ = [
     "MetadataQuery",
     "TimeTool",
     "ExportTool",
+    "TTSTool",
 ]
 
 __version__ = "0.2.0"

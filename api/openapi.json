@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://host.docker.internal:8000",
+      "url": "http://localhost:8000",
       "description": "剪映草稿 API 服务器"
     }
   ],
@@ -22,7 +22,7 @@
         "operationId": "health",
         "responses": {
           "200": {
-            "description": "服务健康状态",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -44,7 +44,7 @@
         "operationId": "list_drafts",
         "responses": {
           "200": {
-            "description": "活跃草稿列表",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -74,7 +74,7 @@
         },
         "responses": {
           "200": {
-            "description": "草稿创建成功，返回 draft_id",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -117,7 +117,7 @@
         ],
         "responses": {
           "200": {
-            "description": "草稿详细信息（尺寸、时长、帧率等）",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -158,7 +158,7 @@
         ],
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -201,7 +201,7 @@
         ],
         "responses": {
           "200": {
-            "description": "草稿保存成功，返回脚本路径",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -244,7 +244,7 @@
         ],
         "responses": {
           "200": {
-            "description": "草稿 JSON 导出",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -297,7 +297,7 @@
         },
         "responses": {
           "200": {
-            "description": "轨道添加成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -338,7 +338,7 @@
         ],
         "responses": {
           "200": {
-            "description": "轨道列表",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -391,7 +391,7 @@
         },
         "responses": {
           "200": {
-            "description": "片段添加成功，返回 segment_id",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -444,7 +444,7 @@
         },
         "responses": {
           "200": {
-            "description": "批量操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -497,7 +497,7 @@
         },
         "responses": {
           "200": {
-            "description": "片段添加成功，返回 segment_id",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -550,7 +550,7 @@
         },
         "responses": {
           "200": {
-            "description": "批量操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -603,7 +603,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -656,7 +656,7 @@
         },
         "responses": {
           "200": {
-            "description": "片段添加成功，返回 segment_id",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -709,7 +709,7 @@
         },
         "responses": {
           "200": {
-            "description": "批量操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -762,7 +762,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -815,7 +815,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -868,7 +868,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -921,7 +921,7 @@
         },
         "responses": {
           "200": {
-            "description": "批量操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -974,7 +974,7 @@
         },
         "responses": {
           "200": {
-            "description": "片段添加成功，返回 segment_id",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1027,7 +1027,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1080,7 +1080,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1133,7 +1133,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1186,7 +1186,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1239,7 +1239,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1292,7 +1292,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1345,7 +1345,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1398,7 +1398,7 @@
         },
         "responses": {
           "200": {
-            "description": "批量操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1451,7 +1451,7 @@
         },
         "responses": {
           "200": {
-            "description": "操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1504,7 +1504,7 @@
         },
         "responses": {
           "200": {
-            "description": "批量操作成功",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1557,7 +1557,7 @@
         },
         "responses": {
           "200": {
-            "description": "一键创建完成",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1601,7 +1601,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1644,7 +1644,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1687,7 +1687,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1718,7 +1718,7 @@
         "operationId": "metadata_masks",
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1739,7 +1739,7 @@
         "operationId": "metadata_mix_modes",
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1772,7 +1772,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1815,7 +1815,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1858,7 +1858,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1901,7 +1901,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1944,7 +1944,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1987,7 +1987,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -2030,7 +2030,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -2073,7 +2073,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -2116,7 +2116,7 @@
         ],
         "responses": {
           "200": {
-            "description": "元数据查询结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -2159,7 +2159,7 @@
         ],
         "responses": {
           "200": {
-            "description": "视频/图片素材信息",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -2202,7 +2202,7 @@
         ],
         "responses": {
           "200": {
-            "description": "音频时长信息",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -2244,7 +2244,7 @@
         },
         "responses": {
           "200": {
-            "description": "时间解析结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -2286,7 +2286,7 @@
         },
         "responses": {
           "200": {
-            "description": "时间格式化结果",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -2301,6 +2301,70 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/util/tts": {
+      "post": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "文本转语音",
+        "description": "将文本合成为语音（Edge-TTS，免费）",
+        "operationId": "tts_synthesize",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TTSRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TTSSynthesizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/util/tts/voices": {
+      "get": {
+        "tags": [
+          "工具"
+        ],
+        "summary": "发音人列表",
+        "description": "获取可用的发音人列表",
+        "operationId": "tts_voices",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TTSVoicesResponse"
                 }
               }
             }
@@ -2406,9 +2470,8 @@
         "properties": {
           "audio_infos": {
             "items": {
-              "type": "object",
               "additionalProperties": true,
-              "description": "音频信息项（支持所有音频字段）"
+              "type": "object"
             },
             "type": "array",
             "title": "Audio Infos",
@@ -2466,6 +2529,38 @@
           "out_duration"
         ],
         "title": "AudioFade"
+      },
+      "BatchResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "添加的片段数量",
+            "default": 0
+          },
+          "segment_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Segment Ids",
+            "description": "新创建片段的 ID 列表"
+          }
+        },
+        "type": "object",
+        "title": "BatchResponse"
       },
       "CaptionItem": {
         "properties": {
@@ -2652,6 +2747,222 @@
         "type": "object",
         "title": "DraftCreate"
       },
+      "DraftCreateResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "draft_id": {
+            "type": "string",
+            "title": "Draft Id",
+            "description": "草稿唯一 ID（12 位 hex）"
+          },
+          "draft_name": {
+            "type": "string",
+            "title": "Draft Name",
+            "description": "草稿名称"
+          },
+          "draft_folder": {
+            "type": "string",
+            "title": "Draft Folder",
+            "description": "草稿文件夹路径"
+          },
+          "script_path": {
+            "type": "string",
+            "title": "Script Path",
+            "description": "草稿脚本文件路径"
+          }
+        },
+        "type": "object",
+        "required": [
+          "draft_id",
+          "draft_name",
+          "draft_folder",
+          "script_path"
+        ],
+        "title": "DraftCreateResponse"
+      },
+      "DraftExportResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "json_string": {
+            "type": "string",
+            "title": "Json String",
+            "description": "草稿 JSON 字符串",
+            "default": ""
+          },
+          "draft_name": {
+            "type": "string",
+            "title": "Draft Name",
+            "description": "草稿名称",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "DraftExportResponse"
+      },
+      "DraftInfoResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "draft_folder": {
+            "type": "string",
+            "title": "Draft Folder",
+            "description": "草稿文件夹路径",
+            "default": ""
+          },
+          "draft_name": {
+            "type": "string",
+            "title": "Draft Name",
+            "description": "草稿名称",
+            "default": ""
+          },
+          "script_path": {
+            "type": "string",
+            "title": "Script Path",
+            "description": "草稿脚本文件路径",
+            "default": ""
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width",
+            "description": "视频宽度",
+            "default": 0
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height",
+            "description": "视频高度",
+            "default": 0
+          },
+          "fps": {
+            "type": "integer",
+            "title": "Fps",
+            "description": "帧率",
+            "default": 0
+          },
+          "duration": {
+            "type": "integer",
+            "title": "Duration",
+            "description": "草稿总时长（微秒）",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DraftInfoResponse"
+      },
+      "DraftItem": {
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "title": "Draft Id",
+            "description": "草稿唯一 ID"
+          },
+          "draft_name": {
+            "type": "string",
+            "title": "Draft Name",
+            "description": "草稿名称"
+          },
+          "draft_folder": {
+            "type": "string",
+            "title": "Draft Folder",
+            "description": "草稿文件夹路径"
+          }
+        },
+        "type": "object",
+        "required": [
+          "draft_id",
+          "draft_name",
+          "draft_folder"
+        ],
+        "title": "DraftItem"
+      },
+      "DraftSaveResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "script_path": {
+            "type": "string",
+            "title": "Script Path",
+            "description": "保存后的脚本文件路径",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "DraftSaveResponse"
+      },
+      "DraftsListResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "drafts": {
+            "items": {
+              "$ref": "#/components/schemas/DraftItem"
+            },
+            "type": "array",
+            "title": "Drafts",
+            "description": "草稿列表"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "草稿总数",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DraftsListResponse"
+      },
       "EffectAdd": {
         "properties": {
           "effect_name": {
@@ -2711,9 +3022,8 @@
         "properties": {
           "effect_infos": {
             "items": {
-              "type": "object",
               "additionalProperties": true,
-              "description": "特效信息项（支持所有特效字段）"
+              "type": "object"
             },
             "type": "array",
             "title": "Effect Infos",
@@ -2784,6 +3094,24 @@
         ],
         "title": "FilterAdd"
       },
+      "GenericSuccessResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "GenericSuccessResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2796,6 +3124,44 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "服务状态",
+            "default": "ok"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "API 版本号"
+          },
+          "drafts_dir": {
+            "type": "string",
+            "title": "Drafts Dir",
+            "description": "草稿存储目录"
+          },
+          "active_drafts": {
+            "type": "integer",
+            "title": "Active Drafts",
+            "description": "当前活跃草稿数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "drafts_dir",
+          "active_drafts"
+        ],
+        "title": "HealthResponse"
       },
       "KeyframeAdd": {
         "properties": {
@@ -2840,9 +3206,8 @@
         "properties": {
           "keyframes": {
             "items": {
-              "type": "object",
               "additionalProperties": true,
-              "description": "关键帧信息项（含 segment_id, property_name, time_offset, value 等）"
+              "type": "object"
             },
             "type": "array",
             "title": "Keyframes",
@@ -2854,6 +3219,249 @@
           "keyframes"
         ],
         "title": "KeyframeBatch"
+      },
+      "MaterialAudioDurationResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "duration": {
+            "type": "integer",
+            "title": "Duration",
+            "description": "音频时长（微秒）",
+            "default": 0
+          },
+          "duration_seconds": {
+            "type": "number",
+            "title": "Duration Seconds",
+            "description": "音频时长（秒）",
+            "default": 0.0
+          },
+          "material_name": {
+            "type": "string",
+            "title": "Material Name",
+            "description": "素材文件名",
+            "default": ""
+          },
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "素材文件路径",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "MaterialAudioDurationResponse"
+      },
+      "MaterialVideoInfoResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "duration": {
+            "type": "integer",
+            "title": "Duration",
+            "description": "时长（微秒）",
+            "default": 0
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width",
+            "description": "视频宽度",
+            "default": 0
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height",
+            "description": "视频高度",
+            "default": 0
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "素材类型（video/image）",
+            "default": ""
+          },
+          "material_name": {
+            "type": "string",
+            "title": "Material Name",
+            "description": "素材文件名",
+            "default": ""
+          },
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "素材文件路径",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "MaterialVideoInfoResponse"
+      },
+      "MetadataItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "内部名称"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "显示名称"
+          },
+          "is_vip": {
+            "type": "boolean",
+            "title": "Is Vip",
+            "description": "是否 VIP",
+            "default": false
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id",
+            "description": "资源 ID",
+            "default": ""
+          },
+          "effect_id": {
+            "type": "string",
+            "title": "Effect Id",
+            "description": "效果 ID",
+            "default": ""
+          },
+          "duration_us": {
+            "title": "Duration Us",
+            "description": "持续时间（微秒，动画类）",
+            "nullable": true,
+            "type": "integer"
+          },
+          "duration_seconds": {
+            "title": "Duration Seconds",
+            "description": "持续时间（秒，动画类）",
+            "nullable": true,
+            "type": "number"
+          },
+          "params": {
+            "title": "Params",
+            "description": "参数列表",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/MetadataParamItem"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "display_name"
+        ],
+        "title": "MetadataItem"
+      },
+      "MetadataListResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MetadataItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "元数据项列表"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "总数",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "MetadataListResponse"
+      },
+      "MetadataParamItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "参数名称"
+          },
+          "default": {
+            "type": "number",
+            "title": "Default",
+            "description": "默认值",
+            "default": 0.0
+          },
+          "min": {
+            "type": "number",
+            "title": "Min",
+            "description": "最小值",
+            "default": 0.0
+          },
+          "max": {
+            "type": "number",
+            "title": "Max",
+            "description": "最大值",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "MetadataParamItem"
+      },
+      "SegmentResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "segment_id": {
+            "type": "string",
+            "title": "Segment Id",
+            "description": "新创建片段的 ID",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "SegmentResponse"
       },
       "SimpleWorkflow": {
         "properties": {
@@ -2898,6 +3506,36 @@
         },
         "type": "object",
         "title": "SimpleWorkflow"
+      },
+      "SimpleWorkflowResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "duration": {
+            "type": "integer",
+            "title": "Duration",
+            "description": "草稿总时长（微秒）",
+            "default": 0
+          },
+          "duration_seconds": {
+            "type": "number",
+            "title": "Duration Seconds",
+            "description": "草稿总时长（秒）",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "SimpleWorkflowResponse"
       },
       "StickerAdd": {
         "properties": {
@@ -2980,6 +3618,144 @@
           "duration"
         ],
         "title": "StickerAdd"
+      },
+      "TTSRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "要合成的文本（支持 SSML）"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice",
+            "description": "发音人 ShortName",
+            "default": "zh-CN-XiaoxiaoNeural"
+          },
+          "rate": {
+            "type": "string",
+            "title": "Rate",
+            "description": "语速，如 +20% 加快，-10% 减慢",
+            "default": "+0%"
+          },
+          "pitch": {
+            "type": "string",
+            "title": "Pitch",
+            "description": "音调，如 +5Hz 升高，-5Hz 降低",
+            "default": "+0Hz"
+          },
+          "output_path": {
+            "title": "Output Path",
+            "description": "输出文件路径（可选）",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "TTSRequest"
+      },
+      "TTSSynthesizeResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "audio_path": {
+            "type": "string",
+            "title": "Audio Path",
+            "description": "音频文件路径",
+            "default": ""
+          },
+          "duration_seconds": {
+            "type": "number",
+            "title": "Duration Seconds",
+            "description": "合成耗时（秒）",
+            "default": 0.0
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice",
+            "description": "使用的发音人",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "TTSSynthesizeResponse"
+      },
+      "TTSVoiceItem": {
+        "properties": {
+          "ShortName": {
+            "type": "string",
+            "title": "Shortname",
+            "description": "发音人标识"
+          },
+          "DisplayName": {
+            "type": "string",
+            "title": "Displayname",
+            "description": "显示名称"
+          },
+          "Gender": {
+            "type": "string",
+            "title": "Gender",
+            "description": "性别"
+          },
+          "Style": {
+            "type": "string",
+            "title": "Style",
+            "description": "风格描述"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ShortName",
+          "DisplayName",
+          "Gender",
+          "Style"
+        ],
+        "title": "TTSVoiceItem"
+      },
+      "TTSVoicesResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "voices": {
+            "items": {
+              "$ref": "#/components/schemas/TTSVoiceItem"
+            },
+            "type": "array",
+            "title": "Voices",
+            "description": "发音人列表"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "发音人数量",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "TTSVoicesResponse"
       },
       "TextAdd": {
         "properties": {
@@ -3135,6 +3911,32 @@
         ],
         "title": "TimeFormat"
       },
+      "TimeFormatResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "formatted": {
+            "type": "string",
+            "title": "Formatted",
+            "description": "格式化后的时间字符串"
+          }
+        },
+        "type": "object",
+        "required": [
+          "formatted"
+        ],
+        "title": "TimeFormatResponse"
+      },
       "TimeParse": {
         "properties": {
           "time_input": {
@@ -3158,6 +3960,32 @@
           "time_input"
         ],
         "title": "TimeParse"
+      },
+      "TimeParseResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "microseconds": {
+            "type": "integer",
+            "title": "Microseconds",
+            "description": "解析后的微秒数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "microseconds"
+        ],
+        "title": "TimeParseResponse"
       },
       "TrackAdd": {
         "properties": {
@@ -3190,6 +4018,106 @@
           "track_type"
         ],
         "title": "TrackAdd"
+      },
+      "TrackAddResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "track_type": {
+            "type": "string",
+            "title": "Track Type",
+            "description": "轨道类型",
+            "default": ""
+          },
+          "track_name": {
+            "type": "string",
+            "title": "Track Name",
+            "description": "轨道名称",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "TrackAddResponse"
+      },
+      "TrackItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "轨道名称"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "轨道类型"
+          },
+          "render_index": {
+            "type": "integer",
+            "title": "Render Index",
+            "description": "渲染层级"
+          },
+          "mute": {
+            "type": "boolean",
+            "title": "Mute",
+            "description": "是否静音",
+            "default": false
+          },
+          "segment_count": {
+            "type": "integer",
+            "title": "Segment Count",
+            "description": "片段数量",
+            "default": 0
+          },
+          "source": {
+            "title": "Source",
+            "description": "来源标识（imported=导入轨道）",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "render_index"
+        ],
+        "title": "TrackItem"
+      },
+      "TrackListResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/TrackItem"
+            },
+            "type": "array",
+            "title": "Tracks",
+            "description": "轨道列表"
+          }
+        },
+        "type": "object",
+        "title": "TrackListResponse"
       },
       "TransitionAdd": {
         "properties": {
@@ -3228,9 +4156,8 @@
         "properties": {
           "transitions": {
             "items": {
-              "type": "object",
               "additionalProperties": true,
-              "description": "转场信息项（含 segment_id, transition_name, duration 等）"
+              "type": "object"
             },
             "type": "array",
             "title": "Transitions",
@@ -3268,14 +4195,11 @@
             "title": "Error Type"
           },
           "input": {
-            "title": "Input",
-            "description": "导致错误的输入值"
+            "title": "Input"
           },
           "ctx": {
             "type": "object",
-            "title": "Context",
-            "description": "错误上下文",
-            "additionalProperties": true
+            "title": "Context"
           }
         },
         "type": "object",
@@ -3378,9 +4302,8 @@
         "properties": {
           "video_infos": {
             "items": {
-              "type": "object",
               "additionalProperties": true,
-              "description": "视频信息项（支持所有视频字段）"
+              "type": "object"
             },
             "type": "array",
             "title": "Video Infos",
@@ -3398,526 +4321,6 @@
           "video_infos"
         ],
         "title": "VideoBatch"
-      },
-      "HealthResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "status": {
-            "type": "string",
-            "description": "服务状态",
-            "example": "ok"
-          },
-          "version": {
-            "type": "string",
-            "description": "API 版本号",
-            "example": "0.2.0"
-          },
-          "drafts_dir": {
-            "type": "string",
-            "description": "草稿存储目录"
-          },
-          "active_drafts": {
-            "type": "integer",
-            "description": "当前活跃草稿数"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DraftCreateResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "draft_id": {
-            "type": "string",
-            "description": "草稿唯一 ID（12 位 hex）",
-            "example": "ac51f93630c2"
-          },
-          "draft_name": {
-            "type": "string",
-            "description": "草稿名称"
-          },
-          "draft_folder": {
-            "type": "string",
-            "description": "草稿文件夹路径"
-          },
-          "script_path": {
-            "type": "string",
-            "description": "草稿脚本文件路径"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DraftsListResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "drafts": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "draft_id": {
-                  "type": "string"
-                },
-                "draft_name": {
-                  "type": "string"
-                },
-                "draft_folder": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "count": {
-            "type": "integer",
-            "description": "草稿总数"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DraftInfoResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "draft_folder": {
-            "type": "string",
-            "description": "草稿文件夹路径"
-          },
-          "draft_name": {
-            "type": "string",
-            "description": "草稿名称"
-          },
-          "script_path": {
-            "type": "string",
-            "description": "草稿脚本文件路径"
-          },
-          "width": {
-            "type": "integer",
-            "description": "视频宽度"
-          },
-          "height": {
-            "type": "integer",
-            "description": "视频高度"
-          },
-          "fps": {
-            "type": "integer",
-            "description": "帧率"
-          },
-          "duration": {
-            "type": "integer",
-            "description": "草稿总时长（微秒）"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DraftExportResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "json_string": {
-            "type": "string",
-            "description": "草稿 JSON 字符串"
-          },
-          "draft_name": {
-            "type": "string",
-            "description": "草稿名称"
-          }
-        },
-        "additionalProperties": false
-      },
-      "GenericSuccessResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功",
-            "default": true
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DraftSaveResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "script_path": {
-            "type": "string",
-            "description": "保存后的脚本文件路径"
-          }
-        },
-        "additionalProperties": false
-      },
-      "TrackItem": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "轨道名称"
-          },
-          "type": {
-            "type": "string",
-            "description": "轨道类型"
-          },
-          "render_index": {
-            "type": "integer",
-            "description": "渲染层级"
-          },
-          "mute": {
-            "type": "boolean",
-            "description": "是否静音"
-          },
-          "segment_count": {
-            "type": "integer",
-            "description": "片段数量"
-          },
-          "source": {
-            "type": "string",
-            "description": "来源标识（imported=导入轨道）"
-          }
-        }
-      },
-      "TrackAddResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "track_type": {
-            "type": "string",
-            "description": "轨道类型"
-          },
-          "track_name": {
-            "type": "string",
-            "description": "轨道名称"
-          }
-        },
-        "additionalProperties": false
-      },
-      "TrackListResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "tracks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TrackItem"
-            },
-            "description": "轨道列表"
-          }
-        },
-        "additionalProperties": false
-      },
-      "MetadataItem": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "内部名称"
-          },
-          "display_name": {
-            "type": "string",
-            "description": "显示名称"
-          },
-          "is_vip": {
-            "type": "boolean",
-            "description": "是否 VIP"
-          },
-          "resource_id": {
-            "type": "string",
-            "description": "资源 ID"
-          },
-          "effect_id": {
-            "type": "string",
-            "description": "效果 ID"
-          },
-          "duration_us": {
-            "type": "integer",
-            "description": "持续时间（微秒，动画类）"
-          },
-          "duration_seconds": {
-            "type": "number",
-            "description": "持续时间（秒，动画类）"
-          },
-          "params": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MetadataParamItem"
-            },
-            "description": "参数列表"
-          }
-        }
-      },
-      "MetadataParamItem": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "参数名称"
-          },
-          "default": {
-            "type": "number",
-            "description": "默认值"
-          },
-          "min": {
-            "type": "number",
-            "description": "最小值"
-          },
-          "max": {
-            "type": "number",
-            "description": "最大值"
-          }
-        }
-      },
-      "SegmentResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "segment_id": {
-            "type": "string",
-            "description": "新创建片段的 ID"
-          }
-        },
-        "additionalProperties": false
-      },
-      "BatchResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "count": {
-            "type": "integer",
-            "description": "添加的片段数量"
-          },
-          "segment_ids": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "新创建片段的 ID 列表"
-          }
-        },
-        "additionalProperties": false
-      },
-      "TimeParseResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "microseconds": {
-            "type": "integer",
-            "description": "解析后的微秒数",
-            "example": 5000000
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          }
-        },
-        "additionalProperties": false
-      },
-      "TimeFormatResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "formatted": {
-            "type": "string",
-            "description": "格式化后的时间字符串",
-            "example": "00:01:05.000"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          }
-        },
-        "additionalProperties": false
-      },
-      "SimpleWorkflowResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "duration": {
-            "type": "integer",
-            "description": "草稿总时长（微秒）"
-          },
-          "duration_seconds": {
-            "type": "number",
-            "description": "草稿总时长（秒）"
-          }
-        },
-        "additionalProperties": false
-      },
-      "MaterialVideoInfoResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "duration": {
-            "type": "integer",
-            "description": "时长（微秒）"
-          },
-          "width": {
-            "type": "integer",
-            "description": "视频宽度"
-          },
-          "height": {
-            "type": "integer",
-            "description": "视频高度"
-          },
-          "type": {
-            "type": "string",
-            "description": "素材类型（video/image）"
-          },
-          "material_name": {
-            "type": "string",
-            "description": "素材文件名"
-          },
-          "path": {
-            "type": "string",
-            "description": "素材文件路径"
-          }
-        },
-        "additionalProperties": false
-      },
-      "MaterialAudioDurationResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "duration": {
-            "type": "integer",
-            "description": "音频时长（微秒）"
-          },
-          "duration_seconds": {
-            "type": "number",
-            "description": "音频时长（秒）"
-          },
-          "material_name": {
-            "type": "string",
-            "description": "素材文件名"
-          },
-          "path": {
-            "type": "string",
-            "description": "素材文件路径"
-          }
-        },
-        "additionalProperties": false
-      },
-      "MetadataListResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "操作是否成功"
-          },
-          "message": {
-            "type": "string",
-            "description": "操作结果消息"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MetadataItem"
-            },
-            "description": "元数据项列表"
-          },
-          "count": {
-            "type": "integer",
-            "description": "总数"
-          }
-        },
-        "additionalProperties": false
       }
     }
   }
