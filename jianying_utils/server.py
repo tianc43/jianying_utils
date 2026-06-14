@@ -358,6 +358,7 @@ class DraftCreateResponse(BaseModel):
     draft_name: str = Field(..., description="草稿名称")
     draft_folder: str = Field(..., description="草稿文件夹路径")
     script_path: str = Field(..., description="草稿脚本文件路径")
+    download_url: str = Field("", description="草稿文件下载 URL")
 
 class DraftsListResponse(BaseModel):
     success: bool = Field(True, description="操作是否成功")
@@ -375,6 +376,7 @@ class DraftInfoResponse(BaseModel):
     height: int = Field(0, description="视频高度")
     fps: int = Field(0, description="帧率")
     duration: int = Field(0, description="草稿总时长（微秒）")
+    download_url: str = Field("", description="草稿文件下载 URL")
 
 class DraftSaveResponse(BaseModel):
     success: bool = Field(True, description="操作是否成功")
@@ -507,7 +509,8 @@ def create_draft(body: DraftCreate):
     _save_disk_registry({**_load_disk_registry(), draft_id: [DRAFTS_DIR, name]})
     return _ok(draft_id=draft_id, draft_name=name,
                draft_folder=result.get("draft_folder"),
-               script_path=result.get("script_path"))
+               script_path=result.get("script_path"),
+               download_url=f"{DEPLOY_URL}/drafts/{draft_id}/download")
 
 @app.get("/drafts", tags=["草稿管理"], summary="列出所有草稿", response_model=DraftsListResponse)
 def list_drafts():
@@ -523,7 +526,9 @@ def list_drafts():
 def get_draft(draft_id: str):
     """查看指定草稿的基本信息（尺寸、时长等）"""
     folder, name = _resolve(draft_id)
-    return DraftManager.load_draft(folder, name)
+    result = DraftManager.load_draft(folder, name)
+    result["download_url"] = f"{DEPLOY_URL}/drafts/{draft_id}/download"
+    return result
 
 @app.delete("/drafts/{draft_id}", tags=["草稿管理"], summary="删除草稿", response_model=GenericSuccessResponse)
 def delete_draft(draft_id: str):

@@ -1850,6 +1850,11 @@ components:
           type: string
           title: Script Path
           description: 草稿脚本文件路径
+        download_url:
+          type: string
+          title: Download Url
+          description: 草稿文件下载 URL
+          default: ''
       type: object
       required:
       - draft_id
@@ -1928,6 +1933,11 @@ components:
           title: Duration
           description: 草稿总时长（微秒）
           default: 0
+        download_url:
+          type: string
+          title: Download Url
+          description: 草稿文件下载 URL
+          default: ''
       type: object
       title: DraftInfoResponse
     DraftItem:
