@@ -568,45 +568,48 @@ def download_draft(draft_id: str):
     if not os.path.isfile(script_path):
         raise HTTPException(404, f"草稿文件不存在，请先调用 POST /drafts/{draft_id}/save")
 
-    # 读取 JSON，递归收集所有本地文件路径并替换为相对路径
-    material_path_map = {}  # 原路径 → ZIP 内相对路径
+    # 读取 JSON，递归收集所有本地文件路径并替换为剪映占位符路径
+    material_path_map = {}  # 原路径 → (ZIP内路径, 占位符路径)
+    placeholder_id = draft_id or uuid.uuid4().hex[:12]
     draft = {}
     try:
         with open(script_path, "r", encoding="utf-8") as f:
             draft = _json.load(f)
 
-        def _collect_paths(obj):
-            """递归收集所有存在的本地文件路径"""
-            if isinstance(obj, dict):
-                # 优先处理 "path" / "local_path" 字段
-                for key in ("path", "local_path"):
-                    if key in obj and isinstance(obj[key], str):
-                        p = obj[key]
-                        if os.path.isfile(p) and p not in material_path_map:
-                            material_path_map[p] = os.path.basename(p)
-                for v in obj.values():
-                    _collect_paths(v)
-            elif isinstance(obj, list):
-                for v in obj:
-                    _collect_paths(v)
+        # 使用 draft 自己的 id 作为 placeholder UUID
+        draft_uuid = draft.get("id", str(uuid.uuid4()).upper())
 
-        _collect_paths(draft)
-
+        # 通过 materials 子 key 分类收集
+        mats = draft.get("materials", {})
+        if isinstance(mats, dict):
+            for mat_key in mats:
+                sub = "audio" if mat_key == "audios" else "video" if mat_key == "videos" else None
+                if sub:
+                    for mat in (mats[mat_key] if isinstance(mats[mat_key], list) else []):
+                        if isinstance(mat, dict):
+                            for pk in ("path", "local_path"):
+                                if pk in mat and isinstance(mat[pk], str):
+                                    p = mat[pk]
+                                    if os.path.isfile(p) and p not in material_path_map:
+                                        fname = os.path.basename(p)
+                                        material_path_map[p] = (
+                                            f"{sub}/{fname}",
+                                            f"##_draftpath_placeholder_{draft_uuid}_##/{sub}/{fname}"
+                                        )
+        # 递归替换 JSON 中所有绝对路径为占位符
         def _replace_paths(obj):
-            """递归替换已收集的绝对路径为相对路径"""
             if isinstance(obj, dict):
                 for k, v in obj.items():
                     if isinstance(v, str) and v in material_path_map:
-                        obj[k] = material_path_map[v]
+                        obj[k] = material_path_map[v][1]  # 替换为占位符路径
                     elif isinstance(v, (dict, list)):
                         _replace_paths(v)
             elif isinstance(obj, list):
                 for i, v in enumerate(obj):
                     if isinstance(v, str) and v in material_path_map:
-                        obj[i] = material_path_map[v]
+                        obj[i] = material_path_map[v][1]
                     elif isinstance(v, (dict, list)):
                         _replace_paths(v)
-
         _replace_paths(draft)
     except Exception:
         pass
@@ -614,11 +617,11 @@ def download_draft(draft_id: str):
     # 构建 ZIP
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        # 写入修改后的 JSON（路径已替换为相对路径）
+        # 写入修改后的 JSON（路径已替换为占位符）
         zf.writestr("draft_content.json", _json.dumps(draft, ensure_ascii=False, indent=2))
-        # 写入素材文件（和 draft_content.json 同级）
-        for mp, rel in material_path_map.items():
-            zf.write(mp, rel)  # rel 即文件名，放在 ZIP 根目录
+        # 写入素材文件到 audio/ 或 video/ 子目录
+        for mp, (zip_path, _) in material_path_map.items():
+            zf.write(mp, zip_path)
         # 其他额外文件
         draft_dir = os.path.dirname(script_path)
         for fname in os.listdir(draft_dir):
