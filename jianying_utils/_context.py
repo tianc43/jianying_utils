@@ -547,7 +547,8 @@ def _placeholder_suffix(path: str) -> Optional[str]:
 
 
 def _make_placeholder_path(draft_uuid: str, suffix: str) -> str:
-    return f"##_draftpath_placeholder_{draft_uuid}_##/{suffix.replace('\\', '/')}"
+    normalized_suffix = suffix.replace("\\", "/")
+    return f"##_draftpath_placeholder_{draft_uuid}_##/{normalized_suffix}"
 
 
 def _resolve_material_path(draft_dir: str, path: str) -> Optional[str]:

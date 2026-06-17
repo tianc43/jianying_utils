@@ -222,7 +222,8 @@ def rewrite_material_path(value: str, draft_dir: Path, placeholder_id: str) -> s
 
 
 def make_placeholder_path(placeholder_id: str, suffix: str) -> str:
-    return f"##_draftpath_placeholder_{placeholder_id}_##/{suffix.replace('\\', '/')}"
+    normalized_suffix = suffix.replace("\\", "/")
+    return f"##_draftpath_placeholder_{placeholder_id}_##/{normalized_suffix}"
 
 
 def detect_placeholder_id(drafts_root: Path) -> Optional[str]:
