@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { open } from "@tauri-apps/plugin-dialog";
+import { listen } from "@tauri-apps/api/event";
 import {
   Alert,
   Badge,
@@ -12,17 +13,19 @@ import {
   Divider,
   Group,
   Paper,
+  SegmentedControl,
   Stack,
   Text,
   TextInput,
   Title,
   Tooltip,
 } from "@mantine/core";
-import { CheckCircle2, Download, FolderOpen, Info, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
+import { CheckCircle2, ClipboardList, Download, FolderOpen, Info, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
 import {
   appendLogAtom,
   canInstallAtom,
   clearRunStateAtom,
+  currentStepAtom,
   draftNameAtom,
   draftsDirAtom,
   installingAtom,
@@ -30,12 +33,16 @@ import {
   overwriteAtom,
   placeholderIdAtom,
   resultAtom,
+  setCurrentStepAtom,
   sourceAtom,
+  sourceModeAtom,
 } from "./state";
-import { getEnvironmentInfo, installDraft } from "./tauri";
+import { getDiagnosticsInfo, getEnvironmentInfo, installDraft, InstallLogEvent, openLogDir } from "./tauri";
 
 export default function App() {
+  const [diagnosticsText, setDiagnosticsText] = useState("");
   const [source, setSource] = useAtom(sourceAtom);
+  const [sourceMode, setSourceMode] = useAtom(sourceModeAtom);
   const [draftsDir, setDraftsDir] = useAtom(draftsDirAtom);
   const [draftName, setDraftName] = useAtom(draftNameAtom);
   const [placeholderId, setPlaceholderId] = useAtom(placeholderIdAtom);
@@ -43,10 +50,29 @@ export default function App() {
   const [installing, setInstalling] = useAtom(installingAtom);
   const result = useAtomValue(resultAtom);
   const logs = useAtomValue(logsAtom);
+  const currentStep = useAtomValue(currentStepAtom);
   const canInstall = useAtomValue(canInstallAtom);
   const appendLog = useSetAtom(appendLogAtom);
   const clearRunState = useSetAtom(clearRunStateAtom);
+  const setCurrentStep = useSetAtom(setCurrentStepAtom);
   const setResult = useSetAtom(resultAtom);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    listen<InstallLogEvent>("install-log", (event) => {
+      appendLog({ level: event.payload.level, message: event.payload.message });
+      setCurrentStep({
+        key: event.payload.step,
+        level: event.payload.level,
+        message: event.payload.message,
+      });
+    }).then((handler) => {
+      unlisten = handler;
+    });
+    return () => {
+      unlisten?.();
+    };
+  }, [appendLog, setCurrentStep]);
 
   useEffect(() => {
     getEnvironmentInfo()
@@ -64,6 +90,16 @@ export default function App() {
       });
   }, [appendLog, setDraftsDir]);
 
+  useEffect(() => {
+    getDiagnosticsInfo()
+      .then((info) => {
+        setDiagnosticsText(`jy-downloader\n日志目录：${info.logDir}\n日志文件：${info.logFile}`);
+      })
+      .catch(() => {
+        setDiagnosticsText("jy-downloader\n日志信息暂不可用");
+      });
+  }, []);
+
   async function chooseDraftsDir() {
     const selected = await open({ directory: true, multiple: false, title: "选择剪映草稿目录" });
     if (typeof selected === "string") {
@@ -71,10 +107,26 @@ export default function App() {
     }
   }
 
+  async function chooseSourceZip() {
+    const selected = await open({
+      directory: false,
+      multiple: false,
+      title: "选择草稿 ZIP",
+      filters: [{ name: "ZIP", extensions: ["zip"] }],
+    });
+    if (typeof selected === "string") {
+      setSource(selected);
+    }
+  }
+
+  function changeSourceMode(value: string) {
+    setSourceMode(value === "file" ? "file" : "url");
+    setSource("");
+  }
+
   async function onInstall() {
     clearRunState();
     setInstalling(true);
-    appendLog({ level: "info", message: "开始下载并导入草稿。" });
     try {
       const installResult = await installDraft({
         source: source.trim(),
@@ -87,8 +139,26 @@ export default function App() {
       appendLog({ level: "success", message: `导入完成：${installResult.targetDir}` });
     } catch (error) {
       appendLog({ level: "error", message: String(error) });
+      setCurrentStep({ key: "error", level: "error", message: String(error) });
     } finally {
       setInstalling(false);
+    }
+  }
+
+  async function onOpenLogDir() {
+    try {
+      await openLogDir();
+    } catch (error) {
+      appendLog({ level: "error", message: `打开日志目录失败：${String(error)}` });
+    }
+  }
+
+  async function onCopyDiagnostics() {
+    try {
+      await navigator.clipboard.writeText(diagnosticsText);
+      appendLog({ level: "success", message: "诊断信息已复制。" });
+    } catch (error) {
+      appendLog({ level: "error", message: `复制诊断信息失败：${String(error)}` });
     }
   }
 
@@ -114,12 +184,39 @@ export default function App() {
           <Paper withBorder radius="sm" p="lg" className="panel">
             <Stack gap="md">
               <Title order={2}>导入参数</Title>
+              <SegmentedControl
+                value={sourceMode}
+                onChange={changeSourceMode}
+                data={[
+                  { label: "下载 URL", value: "url" },
+                  { label: "本地 ZIP", value: "file" },
+                ]}
+                fullWidth
+              />
               <TextInput
-                label="草稿下载 URL 或本地 ZIP"
-                placeholder="http://server/drafts/<draft_id>/download"
+                label={sourceMode === "url" ? "草稿下载 URL" : "草稿 ZIP 文件"}
+                placeholder={sourceMode === "url" ? "http://server/drafts/<draft_id>/download" : "D:\\drafts\\example.zip"}
                 value={source}
                 onChange={(event) => setSource(event.currentTarget.value)}
                 leftSection={<Download size={16} />}
+                error={
+                  source.trim().length === 0
+                    ? undefined
+                    : sourceMode === "url" && !source.trim().startsWith("http://") && !source.trim().startsWith("https://")
+                      ? "请输入 http:// 或 https:// 开头的下载地址"
+                      : sourceMode === "file" && !source.trim().toLowerCase().endsWith(".zip")
+                        ? "请选择 .zip 草稿包"
+                        : undefined
+                }
+                rightSection={
+                  sourceMode === "file" ? (
+                    <Tooltip label="选择 ZIP">
+                      <button className="icon-button" onClick={chooseSourceZip} type="button">
+                        <FolderOpen size={16} />
+                      </button>
+                    </Tooltip>
+                  ) : undefined
+                }
               />
               <TextInput
                 label="剪映草稿目录"
@@ -176,6 +273,10 @@ export default function App() {
                     <Text size="sm">占位符：<Code>{result.placeholderId}</Code></Text>
                   </Stack>
                 </Alert>
+              ) : installing && currentStep ? (
+                <Alert color={currentStep.level === "error" ? "red" : "blue"} icon={<LoaderCircle className="spin" size={18} />} title="正在导入">
+                  <Text size="sm">{currentStep.message}</Text>
+                </Alert>
               ) : (
                 <Alert color="gray" icon={<TriangleAlert size={18} />} title="等待导入">
                   <Text size="sm">填写 URL 和草稿目录后开始导入。首次使用前，请确保剪映里至少存在一个本机草稿。</Text>
@@ -186,7 +287,19 @@ export default function App() {
             <Paper withBorder radius="sm" p="lg" className="panel log-panel">
               <Group justify="space-between" mb="sm">
                 <Title order={2}>运行日志</Title>
-                <Badge variant="light">{logs.length}</Badge>
+                <Group gap="xs">
+                  <Tooltip label="打开本地日志目录">
+                    <Button variant="subtle" size="xs" leftSection={<FolderOpen size={14} />} onClick={onOpenLogDir}>
+                      日志
+                    </Button>
+                  </Tooltip>
+                  <Tooltip label="复制诊断信息">
+                    <Button variant="subtle" size="xs" leftSection={<ClipboardList size={14} />} onClick={onCopyDiagnostics}>
+                      诊断
+                    </Button>
+                  </Tooltip>
+                  <Badge variant="light">{logs.length}</Badge>
+                </Group>
               </Group>
               <Divider mb="sm" />
               <Stack gap={8}>
