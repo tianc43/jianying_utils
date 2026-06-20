@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制项目代码（只复制需要的目录）
 COPY jianying_utils/ jianying_utils/
 COPY api/ api/
+COPY assets/ assets/
 COPY swagger-viewer.html .
 COPY requirements.txt .
 

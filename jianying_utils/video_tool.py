@@ -24,6 +24,18 @@ _DOWNLOAD_DIR = os.environ.get("JIANYING_TTS_DIR", "") or os.path.join(
 )
 from .time_tool import TimeTool
 
+_CLIP_SETTING_KEYS = {
+    "alpha",
+    "flip_horizontal",
+    "flip_vertical",
+    "rotation",
+    "scale_x",
+    "scale_y",
+    "transform_x",
+    "transform_y",
+}
+_ROUND_CORNER_KEYS = ("round_corner", "corner_radius", "border_radius", "radius")
+
 
 def _resolve_media_path(media_path: str) -> str:
     """如果是远程 URL，下载到本地缓存目录并返回本地路径"""
@@ -52,7 +64,8 @@ class VideoTool:
                   clip_settings: Optional[Dict[str, Any]] = None,
                   track_name: Optional[str] = None,
                   source_timerange_start: Optional[Union[str, int]] = None,
-                  source_timerange_duration: Optional[Union[str, int]] = None) -> Dict[str, Any]:
+                  source_timerange_duration: Optional[Union[str, int]] = None,
+                  round_corner: Optional[float] = None) -> Dict[str, Any]:
         """添加单个视频/图片片段到轨道
 
         Args:
@@ -69,6 +82,7 @@ class VideoTool:
             track_name: 目标轨道名称，当只有一条视频轨道时可省略
             source_timerange_start: 素材截取起始时间
             source_timerange_duration: 素材截取持续时间
+            round_corner: 矩形蒙版圆角，取值范围 0~100
 
         Returns:
             dict: {"success": bool, "segment_id": str}
@@ -104,7 +118,8 @@ class VideoTool:
                 source_tr = Timerange(src_start, src_dur)
 
             # 图像调节
-            cs = _context.parse_clip_settings(clip_settings)
+            cs_dict = _extract_clip_settings({"clip_settings": clip_settings or {}})
+            cs = ClipSettings(**cs_dict) if cs_dict else None
 
             # 创建片段
             segment = VideoSegment(
@@ -115,6 +130,16 @@ class VideoTool:
                 change_pitch=change_pitch,
                 clip_settings=cs
             )
+            resolved_round_corner = _extract_round_corner(
+                {"round_corner": round_corner, "clip_settings": clip_settings}
+            )
+            if resolved_round_corner:
+                segment.add_mask(
+                    MaskType.矩形,
+                    size=1.0,
+                    rect_width=1.0,
+                    round_corner=resolved_round_corner
+                )
 
             script.add_segment(segment, track_name)
             _context.save_script(script)
@@ -167,23 +192,21 @@ class VideoTool:
                 speed = info.get("speed", 1.0)
                 volume = info.get("volume", 1.0)
 
-                cs_dict = {}
-                if "alpha" in info:
-                    cs_dict["alpha"] = info["alpha"]
-                if "transform_x" in info:
-                    cs_dict["transform_x"] = info["transform_x"]
-                if "transform_y" in info:
-                    cs_dict["transform_y"] = info["transform_y"]
-                if "scale_x" in info:
-                    cs_dict["scale_x"] = info["scale_x"]
-                if "scale_y" in info:
-                    cs_dict["scale_y"] = info["scale_y"]
+                cs_dict = _extract_clip_settings(info)
 
                 cs = ClipSettings(**cs_dict) if cs_dict else None
 
                 material = VideoMaterial(video_path)
                 target_tr = Timerange(start, duration)
                 segment = VideoSegment(material, target_tr, speed=speed, volume=volume, clip_settings=cs)
+                round_corner = _extract_round_corner(info)
+                if round_corner:
+                    segment.add_mask(
+                        MaskType.矩形,
+                        size=1.0,
+                        rect_width=1.0,
+                        round_corner=round_corner
+                    )
                 script.add_segment(segment, track_name)
                 segment_ids.append(segment.segment_id)
 
@@ -211,3 +234,32 @@ def _context_parse_time(value):
     if isinstance(value, str):
         return tim(value)
     return int(round(value))
+
+
+def _extract_clip_settings(info: Dict[str, Any]) -> Dict[str, Any]:
+    """提取 ClipSettings 支持的字段，兼容顶层字段和嵌套 clip_settings。"""
+    clip_settings = info.get("clip_settings")
+    cs_dict = {}
+    if isinstance(clip_settings, dict):
+        cs_dict.update({k: v for k, v in clip_settings.items() if k in _CLIP_SETTING_KEYS})
+    cs_dict.update({k: info[k] for k in _CLIP_SETTING_KEYS if k in info})
+    return cs_dict
+
+
+def _extract_round_corner(info: Dict[str, Any]) -> Optional[float]:
+    """提取矩形蒙版圆角，支持 round_corner 及常见 radius 别名。"""
+    clip_settings = info.get("clip_settings")
+    sources = [info]
+    if isinstance(clip_settings, dict):
+        sources.append(clip_settings)
+
+    for source in sources:
+        for key in _ROUND_CORNER_KEYS:
+            value = source.get(key)
+            if value is None:
+                continue
+            try:
+                return max(0.0, min(100.0, float(value)))
+            except (TypeError, ValueError):
+                return None
+    return None

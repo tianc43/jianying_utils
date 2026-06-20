@@ -175,6 +175,8 @@ class VideoAdd(BaseModel):
     transform_y: Optional[float] = Field(None, description="Y 位移")
     scale_x: Optional[float] = Field(None, description="X 缩放")
     scale_y: Optional[float] = Field(None, description="Y 缩放")
+    clip_settings: Optional[Dict[str, Any]] = Field(None, description="图像调节设置")
+    round_corner: Optional[float] = Field(None, description="矩形蒙版圆角 0~100")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
 
 class VideoBatch(BaseModel):
@@ -684,8 +686,8 @@ def list_tracks(draft_id: str):
 def add_video(draft_id: str, body: VideoAdd):
     """添加单个视频或图片片段"""
     folder, name = _resolve(draft_id)
-    clip = {}
     d = body.model_dump()
+    clip = d.pop("clip_settings", None) or {}
     for k in ("alpha", "transform_x", "transform_y", "scale_x", "scale_y"):
         v = d.pop(k, None)
         if v is not None: clip[k] = v

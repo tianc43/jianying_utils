@@ -15,6 +15,7 @@ services:
     volumes:
       - ./data/drafts:/app/drafts            # 草稿文件 → 主机 ./data/drafts
       - ./data/tts:/app/tts_output           # TTS 音频 → 主机 ./data/tts
+      - ./assets:/app/assets                 # 素材文件 → 主机 ./assets
     restart: unless-stopped
     # 资源限制
     deploy:
