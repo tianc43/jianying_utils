@@ -3,13 +3,13 @@
 适用于 Dify 工作流的代码节点。
 """
 
-import os
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
-from pyJianYingDraft import VideoMaterial, AudioMaterial, CropSettings
+from pyJianYingDraft import AudioMaterial, CropSettings
 
 from . import _context
 from .material_path import resolve_material_path
+from .video_material import create_video_material
 
 
 class MaterialTool:
@@ -27,7 +27,7 @@ class MaterialTool:
             dict: {"success": bool, "duration": int, "width": int, "height": int, "type": str}
         """
         path = resolve_material_path(path, ".jpg", "image/*,video/*;q=0.9,*/*;q=0.8")
-        mat = VideoMaterial(path)
+        mat = create_video_material(path)
         return _context.make_result(
             True,
             f"素材信息: {mat.material_name}",

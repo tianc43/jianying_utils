@@ -37,6 +37,7 @@ from jianying_utils import (
 )
 from jianying_utils import _context
 from jianying_utils.logging_config import setup_logging
+from jianying_utils.video_material import create_video_material
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -190,6 +191,12 @@ def _resolve(draft_id: str) -> tuple:
 
 def _ok(**kw) -> dict:
     return {"success": True, **kw}
+
+def _return_or_raise(result: dict) -> dict:
+    """Return tool results, but surface business failures as HTTP failures."""
+    if result.get("success") is False:
+        raise HTTPException(status_code=500, detail=result)
+    return result
 
 def _safe_filename_stem(value: str) -> str:
     stem = os.path.splitext(os.path.basename(value or ""))[0]
@@ -982,13 +989,13 @@ def add_video(draft_id: str, body: VideoAdd):
         if v is not None: clip[k] = v
     if clip: d["clip_settings"] = clip
     del d["video_path"]
-    return VideoTool.add_video(folder, name, body.video_path, **d)
+    return _return_or_raise(VideoTool.add_video(folder, name, body.video_path, **d))
 
 @app.post("/drafts/{draft_id}/videos/batch", tags=["视频"], summary="批量添加视频", response_model=BatchResponse)
 def add_videos_batch(draft_id: str, body: VideoBatch):
     """批量添加视频或图片片段"""
     folder, name = _resolve(draft_id)
-    return VideoTool.add_videos_batch(folder, name, body.video_infos, body.track_name)
+    return _return_or_raise(VideoTool.add_videos_batch(folder, name, body.video_infos, body.track_name))
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 音频
@@ -1169,7 +1176,7 @@ def workflow_simple(draft_id: str, body: SimpleWorkflow):
     video_path = resolve_material_path(body.video_path, ".jpg", "image/*,video/*;q=0.9,*/*;q=0.8") if body.video_path else ""
     if video_path and os.path.exists(video_path):
         script.add_track(TrackType.video)
-        mat = VideoMaterial(video_path)
+        mat = create_video_material(video_path)
         script.add_segment(VideoSegment(mat, Timerange(0, mat.duration)))
 
     audio_path = resolve_material_path(body.audio_path, ".mp3", "audio/mpeg,audio/*;q=0.9,*/*;q=0.8") if body.audio_path else ""

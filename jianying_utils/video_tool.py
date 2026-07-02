@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, List, Union
 from uuid import uuid4
 
 from pyJianYingDraft import (
-    VideoSegment, VideoMaterial, Timerange, ClipSettings,
+    VideoSegment, Timerange, ClipSettings,
     FilterType, MaskType, TransitionType,
     VideoSceneEffectType, VideoCharacterEffectType
 )
@@ -18,6 +18,7 @@ from pyJianYingDraft.metadata.mix_mode_meta import MixModeType
 from . import _context
 from .material_path import resolve_material_path
 from .time_tool import TimeTool
+from .video_material import create_video_material
 
 _CLIP_SETTING_KEYS = {
     "alpha",
@@ -99,7 +100,7 @@ class VideoTool:
 
         # 创建素材（支持 URL 自动下载）
         video_path = _resolve_media_path(video_path)
-        material = VideoMaterial(video_path)
+        material = create_video_material(video_path)
 
         # 计算目标时间范围
         if duration_us is None:
@@ -212,7 +213,7 @@ class VideoTool:
 
             cs = ClipSettings(**cs_dict) if cs_dict else None
 
-            material = VideoMaterial(video_path)
+            material = create_video_material(video_path)
             target_tr = Timerange(start, duration)
             segment = VideoSegment(material, target_tr, speed=speed, volume=volume, clip_settings=cs)
             glow_outline = _extract_glow_outline(info)

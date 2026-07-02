@@ -8,12 +8,13 @@ import urllib.parse
 from typing import Optional, Dict, Any, List, Union
 
 from pyJianYingDraft import (
-    ScriptFile, VideoMaterial, AudioMaterial,
+    ScriptFile, AudioMaterial,
     Timerange, ShrinkMode, ExtendMode
 )
 
 from . import _context
 from .material_path import resolve_material_path
+from .video_material import create_video_material
 
 
 # 缩短/延长模式映射
@@ -178,7 +179,7 @@ class TemplateTool:
 
         if ext in video_exts:
             resolved_path = resolve_material_path(new_material_path, ".jpg", "image/*,video/*;q=0.9,*/*;q=0.8")
-            material = VideoMaterial(resolved_path)
+            material = create_video_material(resolved_path)
         elif ext in audio_exts:
             resolved_path = resolve_material_path(new_material_path, ".mp3", "audio/mpeg,audio/*;q=0.9,*/*;q=0.8")
             material = AudioMaterial(resolved_path)
