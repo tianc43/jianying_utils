@@ -17,6 +17,7 @@ import base64
 import binascii
 import hashlib
 import time
+import tempfile
 from typing import Optional, Dict, Any, List, Union
 from pathlib import Path
 
@@ -143,9 +144,8 @@ if _PROJECT_ROOT.is_dir():
     app.mount("/static", StaticFiles(directory=str(_PROJECT_ROOT)), name="static")
 
 # TTS 音频输出目录
-_TTS_DIR = os.environ.get("JIANYING_TTS_DIR", "")
-if _TTS_DIR:
-    os.makedirs(_TTS_DIR, exist_ok=True)
+_TTS_DIR = os.environ.get("JIANYING_TTS_DIR", tempfile.gettempdir())
+os.makedirs(_TTS_DIR, exist_ok=True)
 
 # Image material output directory. Defaults under project root so /static URLs work.
 _IMAGE_DIR = os.environ.get("JIANYING_IMAGE_DIR", str(_PROJECT_ROOT / "uploads" / "images"))
@@ -568,6 +568,45 @@ class TTSRequest(BaseModel):
     pitch: str = Field("+0Hz", description="音调，如 +5Hz 升高，-5Hz 降低")
     output_path: Optional[str] = Field(None, description="输出文件路径（可选）")
 
+class FishProsodyControl(BaseModel):
+    speed: float = Field(1.0, description="语速倍率，0.5~2.0")
+    volume: float = Field(0.0, description="音量调整 dB")
+    normalize_loudness: bool = Field(True, description="是否规范化响度（S2-Pro）")
+
+class FishTTSRequest(BaseModel):
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "text": "Hello! Welcome to Fish Audio. This is my first AI-generated voice.",
+                    "model": "s2-pro",
+                    "format": "mp3"
+                }
+            ]
+        }
+    }
+
+    text: str = Field(..., description="要合成的文本")
+    api_key: Optional[str] = Field(None, description="Fish Audio API Key；不传则读取 FISH_API_KEY 环境变量")
+    model: str = Field("s2-pro", description="Fish Audio TTS 模型，推荐 s2-pro")
+    output_path: Optional[str] = Field(None, description="输出文件路径（可选）")
+    reference_id: Optional[Union[str, List[str]]] = Field(None, description="声音模型 ID；多说话人可传 ID 数组")
+    temperature: Optional[float] = Field(None, ge=0, le=1, description="表现力控制，默认由 Fish Audio 决定")
+    top_p: Optional[float] = Field(None, ge=0, le=1, description="nucleus sampling 多样性")
+    prosody: Optional[FishProsodyControl] = Field(None, description="语速、音量和响度控制")
+    chunk_length: Optional[int] = Field(None, ge=100, le=300, description="文本分块长度")
+    normalize: Optional[bool] = Field(None, description="是否规范化文本")
+    format: str = Field("mp3", description="输出格式: wav/pcm/mp3/opus")
+    sample_rate: Optional[int] = Field(None, description="采样率 Hz")
+    mp3_bitrate: Optional[int] = Field(None, description="MP3 码率 kbps: 64/128/192")
+    opus_bitrate: Optional[int] = Field(None, description="Opus 码率 bps: -1000/24000/32000/48000/64000")
+    latency: Optional[str] = Field(None, description="延迟质量模式: low/normal/balanced")
+    max_new_tokens: Optional[int] = Field(None, description="每个文本块生成的最大音频 token")
+    repetition_penalty: Optional[float] = Field(None, description="重复惩罚，默认 1.2")
+    min_chunk_length: Optional[int] = Field(None, ge=0, le=100, description="最小分块字符数")
+    condition_on_previous_chunks: Optional[bool] = Field(None, description="是否使用前文音频作为上下文")
+    early_stop_threshold: Optional[float] = Field(None, ge=0, le=1, description="批处理早停阈值")
+
 class ImageB64SaveRequest(BaseModel):
     model_config = {
         "json_schema_extra": {
@@ -603,6 +642,9 @@ class TTSSynthesizeResponse(BaseModel):
     download_url: str = Field("", description="音频下载 URL")
     duration_seconds: float = Field(0.0, description="合成耗时（秒）")
     voice: str = Field("", description="使用的发音人")
+    provider: str = Field("", description="TTS 服务提供方")
+    model: str = Field("", description="使用的模型")
+    format: str = Field("", description="音频格式")
 
 class ImageSaveResponse(BaseModel):
     success: bool = Field(True, description="操作是否成功")
@@ -1386,6 +1428,39 @@ def tts_synthesize(body: TTSRequest):
     if result.get("success") and result.get("audio_path"):
         fname = os.path.basename(result["audio_path"])
         result["download_url"] = f"{DEPLOY_URL}/util/tts/download/{fname}"
+        result["provider"] = "edge-tts"
+        result["format"] = "mp3"
+    return result
+
+@app.post("/util/tts/fish", tags=["工具"], summary="Fish Audio 文本转语音", response_model=TTSSynthesizeResponse)
+def tts_fish_synthesize(body: FishTTSRequest):
+    """使用 Fish Audio API 将文本合成为语音。"""
+    result = TTSTool.synthesize_fish(
+        text=body.text,
+        api_key=body.api_key,
+        model=body.model,
+        output_path=body.output_path,
+        reference_id=body.reference_id,
+        temperature=body.temperature,
+        top_p=body.top_p,
+        prosody=body.prosody.model_dump() if body.prosody else None,
+        chunk_length=body.chunk_length,
+        normalize=body.normalize,
+        format=body.format,
+        sample_rate=body.sample_rate,
+        mp3_bitrate=body.mp3_bitrate,
+        opus_bitrate=body.opus_bitrate,
+        latency=body.latency,
+        max_new_tokens=body.max_new_tokens,
+        repetition_penalty=body.repetition_penalty,
+        min_chunk_length=body.min_chunk_length,
+        condition_on_previous_chunks=body.condition_on_previous_chunks,
+        early_stop_threshold=body.early_stop_threshold,
+    )
+    if result.get("success") and result.get("audio_path"):
+        fname = os.path.basename(result["audio_path"])
+        result["download_url"] = f"{DEPLOY_URL}/util/tts/download/{fname}"
+        result["provider"] = "fish-audio"
     return result
 
 @app.get("/util/tts/voices", tags=["工具"], summary="发音人列表", response_model=TTSVoicesResponse)
@@ -1401,9 +1476,16 @@ def tts_download(filename: str):
     file_path = os.path.join(_TTS_DIR, safe_name)
     if not os.path.isfile(file_path):
         raise HTTPException(404, f"音频文件不存在: {safe_name}")
+    suffix = Path(safe_name).suffix.lower()
+    media_type = {
+        ".mp3": "audio/mpeg",
+        ".wav": "audio/wav",
+        ".opus": "audio/opus",
+        ".pcm": "application/octet-stream",
+    }.get(suffix, "application/octet-stream")
     return FileResponse(
         file_path,
-        media_type="audio/mpeg",
+        media_type=media_type,
         filename=safe_name,
         headers={"Content-Disposition": f'attachment; filename="{safe_name}"'}
     )

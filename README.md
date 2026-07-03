@@ -108,7 +108,7 @@ Traceback (most recent call last):
 export JIANYING_LOG_LEVEL=DEBUG
 ```
 
-## API 概览（50 个端点）
+## API 概览
 
 | 分类 | 端点 | 说明 |
 |------|------|------|
@@ -164,7 +164,25 @@ export JIANYING_LOG_LEVEL=DEBUG
 | **工具** | `POST /util/time/parse` | 解析时间 |
 | | `POST /util/time/format` | 格式化时间 |
 | | `POST /util/tts` | 文本转语音（Edge-TTS） |
+| | `POST /util/tts/fish` | 文本转语音（Fish Audio） |
 | | `GET /util/tts/voices` | 发音人列表 |
+
+### Fish Audio TTS
+
+Fish Audio 合成接口会读取 `FISH_API_KEY` 环境变量，也可以在请求体里临时传 `api_key`：
+
+```http
+POST /util/tts/fish
+Content-Type: application/json
+
+{
+  "text": "Hello! Welcome to Fish Audio. This is my first AI-generated voice.",
+  "model": "s2-pro",
+  "format": "mp3"
+}
+```
+
+常用可选参数包括 `reference_id`、`temperature`、`top_p`、`prosody`、`sample_rate`、`mp3_bitrate`、`latency`、`max_new_tokens`、`repetition_penalty` 等。生成文件默认保存到 `JIANYING_TTS_DIR`，并返回 `/util/tts/download/{filename}` 下载地址。
 
 ## Dify 保存 b64_json 图片素材
 

@@ -10,6 +10,7 @@ services:
       - JIANYING_DRAFTS_DIR=/app/drafts
       - JIANYING_DOWNLOAD_DIR=/app/downloads
       - JIANYING_TTS_DIR=/app/tts_output    # TTS 音频输出目录
+      - FISH_API_KEY=${FISH_API_KEY:-}       # Fish Audio TTS API Key
       - ROOT_PATH=/jianying-utils            # nginx 代理路径前缀
       - DEPLOY_URL=https://tianc43.xyz/jianying-utils
       - WORKERS=4                            # gunicorn worker 数量

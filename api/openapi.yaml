@@ -1514,6 +1514,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /material/images/chunks:
+    post:
+      tags:
+      - 素材
+      summary: 分片保存 Base64 图片素材
+      description: Accept small b64_json chunks and save the image after the final
+        chunk.
+      operationId: material_save_image_chunk
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageB64ChunkSaveRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /material/images/download/{filename}:
     get:
       tags:
@@ -1610,6 +1636,32 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TTSRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TTSSynthesizeResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /util/tts/fish:
+    post:
+      tags:
+      - 工具
+      summary: Fish Audio 文本转语音
+      description: 使用 Fish Audio API 将文本合成为语音。
+      operationId: tts_fish_synthesize
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FishTTSRequest'
         required: true
       responses:
         '200':
@@ -2236,6 +2288,163 @@ components:
       - start
       - duration
       title: FilterAdd
+    FishProsodyControl:
+      properties:
+        speed:
+          type: number
+          title: Speed
+          description: 语速倍率，0.5~2.0
+          default: 1.0
+        volume:
+          type: number
+          title: Volume
+          description: 音量调整 dB
+          default: 0.0
+        normalize_loudness:
+          type: boolean
+          title: Normalize Loudness
+          description: 是否规范化响度（S2-Pro）
+          default: true
+      type: object
+      title: FishProsodyControl
+    FishTTSRequest:
+      properties:
+        text:
+          type: string
+          title: Text
+          description: 要合成的文本
+        api_key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Api Key
+          description: Fish Audio API Key；不传则读取 FISH_API_KEY 环境变量
+        model:
+          type: string
+          title: Model
+          description: Fish Audio TTS 模型，推荐 s2-pro
+          default: s2-pro
+        output_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Output Path
+          description: 输出文件路径（可选）
+        reference_id:
+          anyOf:
+          - type: string
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Reference Id
+          description: 声音模型 ID；多说话人可传 ID 数组
+        temperature:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Temperature
+          description: 表现力控制，默认由 Fish Audio 决定
+        top_p:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Top P
+          description: nucleus sampling 多样性
+        prosody:
+          anyOf:
+          - $ref: '#/components/schemas/FishProsodyControl'
+          - type: 'null'
+          description: 语速、音量和响度控制
+        chunk_length:
+          anyOf:
+          - type: integer
+            maximum: 300.0
+            minimum: 100.0
+          - type: 'null'
+          title: Chunk Length
+          description: 文本分块长度
+        normalize:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Normalize
+          description: 是否规范化文本
+        format:
+          type: string
+          title: Format
+          description: '输出格式: wav/pcm/mp3/opus'
+          default: mp3
+        sample_rate:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Sample Rate
+          description: 采样率 Hz
+        mp3_bitrate:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Mp3 Bitrate
+          description: 'MP3 码率 kbps: 64/128/192'
+        opus_bitrate:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Opus Bitrate
+          description: 'Opus 码率 bps: -1000/24000/32000/48000/64000'
+        latency:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latency
+          description: '延迟质量模式: low/normal/balanced'
+        max_new_tokens:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max New Tokens
+          description: 每个文本块生成的最大音频 token
+        repetition_penalty:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Repetition Penalty
+          description: 重复惩罚，默认 1.2
+        min_chunk_length:
+          anyOf:
+          - type: integer
+            maximum: 100.0
+            minimum: 0.0
+          - type: 'null'
+          title: Min Chunk Length
+          description: 最小分块字符数
+        condition_on_previous_chunks:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Condition On Previous Chunks
+          description: 是否使用前文音频作为上下文
+        early_stop_threshold:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Early Stop Threshold
+          description: 批处理早停阈值
+      type: object
+      required:
+      - text
+      title: FishTTSRequest
+      examples:
+      - format: mp3
+        model: s2-pro
+        text: Hello! Welcome to Fish Audio. This is my first AI-generated voice.
     GenericSuccessResponse:
       type: object
       properties:
@@ -2277,6 +2486,37 @@ components:
           type: integer
           description: 当前活跃草稿数
       additionalProperties: false
+    ImageB64ChunkSaveRequest:
+      properties:
+        upload_id:
+          type: string
+          title: Upload Id
+          description: 分片上传 ID，同一张图片保持一致
+        index:
+          type: integer
+          title: Index
+          description: 当前分片序号，从 0 开始
+        total:
+          type: integer
+          title: Total
+          description: 分片总数
+        chunk:
+          type: string
+          title: Chunk
+          description: 当前 Base64 文本分片
+        filename:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Filename
+          description: 期望文件名；仅最后一个分片用于保存结果
+      type: object
+      required:
+      - upload_id
+      - index
+      - total
+      - chunk
+      title: ImageB64ChunkSaveRequest
     ImageB64SaveRequest:
       properties:
         b64_json:
@@ -2702,6 +2942,21 @@ components:
           type: string
           title: Voice
           description: 使用的发音人
+          default: ''
+        provider:
+          type: string
+          title: Provider
+          description: TTS 服务提供方
+          default: ''
+        model:
+          type: string
+          title: Model
+          description: 使用的模型
+          default: ''
+        format:
+          type: string
+          title: Format
+          description: 音频格式
           default: ''
       type: object
       title: TTSSynthesizeResponse
