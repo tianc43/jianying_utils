@@ -503,6 +503,11 @@ class VideoAdd(BaseModel):
     mix_mode: Optional[str] = Field(None, description="混合模式名称")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
 
+    @field_validator("clip_settings", "mask", "background_filling", mode="before")
+    @classmethod
+    def _coerce_optional_object_fields(cls, value: Any, info: Any) -> Any:
+        return _parse_optional_object(value, info.field_name)
+
 class VideoBatch(BaseModel):
     video_infos: List[Dict[str, Any]] = Field(
         ...,
@@ -591,6 +596,11 @@ class TextAdd(BaseModel):
     clip_settings: Optional[Dict[str, Any]] = Field(None, description="图像调节")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
 
+    @field_validator("border", "background", "shadow", "clip_settings", mode="before")
+    @classmethod
+    def _coerce_optional_object_fields(cls, value: Any, info: Any) -> Any:
+        return _parse_optional_object(value, info.field_name)
+
 class CaptionsAdd(BaseModel):
     model_config = {
         "json_schema_extra": {
@@ -626,6 +636,11 @@ class CaptionsAdd(BaseModel):
     clip_settings: Optional[Dict[str, Any]] = Field(None, description="图像调节")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
     has_shadow: bool = Field(False, description="启用阴影")
+
+    @field_validator("border", "background", "shadow", "clip_settings", mode="before")
+    @classmethod
+    def _coerce_optional_object_fields(cls, value: Any, info: Any) -> Any:
+        return _parse_optional_object(value, info.field_name)
 
 class EffectAdd(BaseModel):
     model_config = {
