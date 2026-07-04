@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: JianYing Draft API
   description: '剪映草稿自动化 — 独立部署 REST API
@@ -1762,13 +1762,10 @@ components:
           anyOf:
           - type: string
           - type: integer
-          - type: 'null'
           title: Duration
           description: 动画持续时长。持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。不填则使用动画默认值。
-          examples:
-          - 0.5s
-          - 500000
+          example: 0.5s
       type: object
       required:
       - segment_id
@@ -1787,21 +1784,15 @@ components:
           title: Start
           description: 片段在时间线上的起始时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 0s
-          - 0
-          - 5000000
+          example: 0s
         duration:
           anyOf:
           - type: string
           - type: integer
-          - type: 'null'
           title: Duration
           description: 持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。不填则使用素材全长。
-          examples:
-          - 5s
-          - 5000000
+          example: 5s
         speed:
           type: number
           title: Speed
@@ -1813,9 +1804,8 @@ components:
           description: 音量
           default: 1.0
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 目标轨道名称
       type: object
@@ -1823,14 +1813,11 @@ components:
       - audio_path
       - start
       title: AudioAdd
-      examples:
-      - audio_path: https://example.com/audio.mp3
+      example:
+        audio_path: https://example.com/audio.mp3
         duration: 5s
         start: 0s
         volume: 0.8
-      - audio_path: D:/materials/bgm.mp3
-        duration: 3000000
-        start: 5000000
     AudioBatch:
       properties:
         audio_infos:
@@ -1841,9 +1828,8 @@ components:
           title: Audio Infos
           description: 音频信息列表。每项至少包含 audio_path、start、end；start/end 为微秒（μs），end 是绝对结束时间，不是持续时长。示例：[{"audio_path":"/path/a.mp3","start":0,"end":5000000}]。
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 目标轨道名称
       type: object
@@ -1863,9 +1849,7 @@ components:
           title: In Duration
           description: 淡入持续时长。持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 0.5s
-          - 500000
+          example: 0.5s
         out_duration:
           anyOf:
           - type: string
@@ -1873,9 +1857,7 @@ components:
           title: Out Duration
           description: 淡出持续时长。持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 0.5s
-          - 500000
+          example: 0.5s
       type: object
       required:
       - segment_id
@@ -1910,14 +1892,12 @@ components:
           type: integer
           title: Start
           description: 起始时间，单位微秒（μs）。1 秒 = 1,000,000 微秒。
-          examples:
-          - 0
+          example: 0
         end:
           type: integer
           title: End
           description: 结束时间，单位微秒（μs）。注意这是绝对结束时间，不是持续时长；持续时长 = end - start。
-          examples:
-          - 5000000
+          example: 5000000
       type: object
       required:
       - text
@@ -1933,9 +1913,8 @@ components:
           title: Captions
           description: 字幕列表
         font:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Font
           description: 字体名称
         font_size:
@@ -1994,37 +1973,32 @@ components:
           description: 自动换行
           default: true
         border:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Border
           description: 描边设置
         background:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Background
           description: 背景设置
         shadow:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Shadow
           description: 阴影设置
         clip_settings:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Clip Settings
           description: 图像调节
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 目标轨道名称
         has_shadow:
@@ -2036,8 +2010,8 @@ components:
       required:
       - captions
       title: CaptionsAdd
-      examples:
-      - captions:
+      example:
+        captions:
         - end: 2500000
           start: 0
           text: 第一句字幕
@@ -2139,9 +2113,7 @@ components:
         duration:
           type: integer
           description: 草稿总时长（微秒）
-          examples: &id001
-          - 3s
-          - 3000000
+          example: 3000000
       additionalProperties: false
     DraftItem:
       properties:
@@ -2213,9 +2185,7 @@ components:
           title: Start
           description: 片段在时间线上的起始时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 0s
-          - 0
+          example: 0s
         duration:
           anyOf:
           - type: string
@@ -2223,21 +2193,17 @@ components:
           title: Duration
           description: 持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 3s
-          - 3000000
+          example: 3s
         params:
-          anyOf:
-          - items:
-              type: number
-            type: array
-          - type: 'null'
+          items:
+            type: number
+          type: array
+          nullable: true
           title: Params
           description: 特效参数 0~100
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 特效轨道名称
       type: object
@@ -2246,8 +2212,8 @@ components:
       - start
       - duration
       title: EffectAdd
-      examples:
-      - duration: 3s
+      example:
+        duration: 3s
         effect_name: 金粉
         params:
         - 50
@@ -2263,9 +2229,8 @@ components:
           description: 特效列表。每项中的 start、duration 均遵循：时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000
             微秒。传数字或纯数字字符串时按微秒处理，例如 5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 特效轨道名称
       type: object
@@ -2285,9 +2250,7 @@ components:
           title: Start
           description: 片段在时间线上的起始时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 0s
-          - 0
+          example: 0s
         duration:
           anyOf:
           - type: string
@@ -2295,18 +2258,15 @@ components:
           title: Duration
           description: 持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 3s
-          - 3000000
+          example: 3s
         intensity:
           type: number
           title: Intensity
           description: 滤镜强度 0~100
           default: 100.0
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 滤镜轨道名称
       type: object
@@ -2341,9 +2301,8 @@ components:
           title: Text
           description: 要合成的文本
         api_key:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Api Key
           description: Fish Audio API Key；不传则读取 FISH_API_KEY 环境变量
         model:
@@ -2352,9 +2311,8 @@ components:
           description: Fish Audio TTS 模型，推荐 s2-pro
           default: s2-pro
         output_path:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Output Path
           description: 输出文件路径（可选）
         reference_id:
@@ -2363,42 +2321,53 @@ components:
           - items:
               type: string
             type: array
-          - type: 'null'
           title: Reference Id
           description: 声音模型 ID；多说话人可传 ID 数组
         temperature:
-          anyOf:
-          - type: number
-            maximum: 1.0
-            minimum: 0.0
-          - type: 'null'
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          nullable: true
           title: Temperature
           description: 表现力控制，默认由 Fish Audio 决定
         top_p:
-          anyOf:
-          - type: number
-            maximum: 1.0
-            minimum: 0.0
-          - type: 'null'
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          nullable: true
           title: Top P
           description: nucleus sampling 多样性
         prosody:
-          anyOf:
-          - $ref: '#/components/schemas/FishProsodyControl'
-          - type: 'null'
+          properties:
+            speed:
+              type: number
+              title: Speed
+              description: 语速倍率，0.5~2.0
+              default: 1.0
+            volume:
+              type: number
+              title: Volume
+              description: 音量调整 dB
+              default: 0.0
+            normalize_loudness:
+              type: boolean
+              title: Normalize Loudness
+              description: 是否规范化响度（S2-Pro）
+              default: true
+          type: object
+          title: FishProsodyControl
+          nullable: true
           description: 语速、音量和响度控制
         chunk_length:
-          anyOf:
-          - type: integer
-            maximum: 300.0
-            minimum: 100.0
-          - type: 'null'
+          type: integer
+          maximum: 300.0
+          minimum: 100.0
+          nullable: true
           title: Chunk Length
           description: 文本分块长度
         normalize:
-          anyOf:
-          - type: boolean
-          - type: 'null'
+          type: boolean
+          nullable: true
           title: Normalize
           description: 是否规范化文本
         format:
@@ -2407,69 +2376,60 @@ components:
           description: '输出格式: wav/pcm/mp3/opus'
           default: mp3
         sample_rate:
-          anyOf:
-          - type: integer
-          - type: 'null'
+          type: integer
+          nullable: true
           title: Sample Rate
           description: 采样率 Hz
         mp3_bitrate:
-          anyOf:
-          - type: integer
-          - type: 'null'
+          type: integer
+          nullable: true
           title: Mp3 Bitrate
           description: 'MP3 码率 kbps: 64/128/192'
         opus_bitrate:
-          anyOf:
-          - type: integer
-          - type: 'null'
+          type: integer
+          nullable: true
           title: Opus Bitrate
           description: 'Opus 码率 bps: -1000/24000/32000/48000/64000'
         latency:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Latency
           description: '延迟质量模式: low/normal/balanced'
         max_new_tokens:
-          anyOf:
-          - type: integer
-          - type: 'null'
+          type: integer
+          nullable: true
           title: Max New Tokens
           description: 每个文本块生成的最大音频 token
         repetition_penalty:
-          anyOf:
-          - type: number
-          - type: 'null'
+          type: number
+          nullable: true
           title: Repetition Penalty
           description: 重复惩罚，默认 1.2
         min_chunk_length:
-          anyOf:
-          - type: integer
-            maximum: 100.0
-            minimum: 0.0
-          - type: 'null'
+          type: integer
+          maximum: 100.0
+          minimum: 0.0
+          nullable: true
           title: Min Chunk Length
           description: 最小分块字符数
         condition_on_previous_chunks:
-          anyOf:
-          - type: boolean
-          - type: 'null'
+          type: boolean
+          nullable: true
           title: Condition On Previous Chunks
           description: 是否使用前文音频作为上下文
         early_stop_threshold:
-          anyOf:
-          - type: number
-            maximum: 1.0
-            minimum: 0.0
-          - type: 'null'
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          nullable: true
           title: Early Stop Threshold
           description: 批处理早停阈值
       type: object
       required:
       - text
       title: FishTTSRequest
-      examples:
-      - format: mp3
+      example:
+        format: mp3
         model: s2-pro
         text: Hello! Welcome to Fish Audio. This is my first AI-generated voice.
     GenericSuccessResponse:
@@ -2532,9 +2492,8 @@ components:
           title: Chunk
           description: 当前 Base64 文本分片
         filename:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Filename
           description: 期望文件名；仅最后一个分片用于保存结果
       type: object
@@ -2551,17 +2510,16 @@ components:
           title: B64 Json
           description: Base64 图片数据，可传纯 b64_json 或 data URL
         filename:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Filename
           description: 期望文件名；服务端会清理路径并按真实图片类型修正扩展名
       type: object
       required:
       - b64_json
       title: ImageB64SaveRequest
-      examples:
-      - b64_json: iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB...
+      example:
+        b64_json: iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB...
         filename: generated-cover.png
     ImageGenerateRequest:
       properties:
@@ -2570,9 +2528,8 @@ components:
           title: Endpoint Url
           description: OpenAI 兼容图片生成接口 URL，例如 https://host/v1/images/generations
         api_key:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Api Key
           description: 上游图片接口 API key
         api_key_header:
@@ -2591,50 +2548,43 @@ components:
           title: Prompt
           description: 图片生成提示词
         response_format:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Response Format
           description: 上游返回格式，支持 b64_json 或 url；置空则不发送
           default: b64_json
         quality:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Quality
           description: 图片质量
           default: low
         size:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Size
           description: 图片尺寸
           default: 1024x576
         output_format:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Output Format
           description: 输出格式
           default: webp
         output_compression:
-          anyOf:
-          - type: integer
-          - type: 'null'
+          type: integer
+          nullable: true
           title: Output Compression
           description: 输出压缩质量
           default: 70
         n:
-          anyOf:
-          - type: integer
-          - type: 'null'
+          type: integer
+          nullable: true
           title: N
           description: 生成数量；本端点只保存第一张
         filename:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Filename
           description: 期望文件名；服务端会清理路径并按真实图片类型修正扩展名
         timeout_seconds:
@@ -2642,26 +2592,23 @@ components:
           title: Timeout Seconds
           description: 单次上游请求超时秒数，最大 3600
           default: 900
-          examples:
-          - 5.0
+          example: 5.0
         max_retries:
           type: integer
           title: Max Retries
           description: 上游网络失败重试次数，最大 5
           default: 2
         headers:
-          anyOf:
-          - additionalProperties:
-              type: string
-            type: object
-          - type: 'null'
+          additionalProperties:
+            type: string
+          type: object
+          nullable: true
           title: Headers
           description: 额外上游请求头
         extra_body:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Extra Body
           description: 透传给上游的额外 JSON 字段
       type: object
@@ -2669,8 +2616,8 @@ components:
       - endpoint_url
       - prompt
       title: ImageGenerateRequest
-      examples:
-      - api_key: sk-...
+      example:
+        api_key: sk-...
         endpoint_url: https://example.com/v1/images/generations
         filename: storyboard-01
         max_retries: 2
@@ -2770,9 +2717,7 @@ components:
           title: Time Offset
           description: 相对片段起点的时间偏移。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 0.5s
-          - 500000
+          example: 0.5s
         value:
           type: number
           title: Value
@@ -2810,12 +2755,11 @@ components:
         duration:
           type: integer
           description: 音频时长（微秒）
-          examples: *id001
+          example: 3000000
         duration_seconds:
           type: number
           description: 音频时长（秒）
-          examples:
-          - 5.0
+          example: 5.0
         material_name:
           type: string
           description: 素材文件名
@@ -2835,7 +2779,7 @@ components:
         duration:
           type: integer
           description: 时长（微秒）
-          examples: *id001
+          example: 3000000
         width:
           type: integer
           description: 视频宽度
@@ -2873,13 +2817,11 @@ components:
         duration_us:
           type: integer
           description: 持续时间（微秒，动画类）
-          examples:
-          - 5000000
+          example: 5000000
         duration_seconds:
           type: number
           description: 持续时间（秒，动画类）
-          examples:
-          - 5.0
+          example: 5.0
         params:
           type: array
           items:
@@ -2950,21 +2892,18 @@ components:
           title: Captions
           description: 字幕列表
         title_text:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Title Text
           description: 标题文本
         video_path:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Video Path
           description: 视频文件路径
         audio_path:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Audio Path
           description: 音频文件路径
       type: object
@@ -2981,12 +2920,11 @@ components:
         duration:
           type: integer
           description: 草稿总时长（微秒）
-          examples: *id001
+          example: 3000000
         duration_seconds:
           type: number
           description: 草稿总时长（秒）
-          examples:
-          - 5.0
+          example: 5.0
       additionalProperties: false
     StickerAdd:
       properties:
@@ -3001,9 +2939,7 @@ components:
           title: Start
           description: 片段在时间线上的起始时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 0s
-          - 0
+          example: 0s
         duration:
           anyOf:
           - type: string
@@ -3011,9 +2947,7 @@ components:
           title: Duration
           description: 持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 3s
-          - 3000000
+          example: 3s
         transform_x:
           type: number
           title: Transform X
@@ -3045,9 +2979,8 @@ components:
           description: 旋转角度
           default: 0.0
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 目标轨道名称
       type: object
@@ -3056,8 +2989,8 @@ components:
       - start
       - duration
       title: StickerAdd
-      examples:
-      - duration: 2s
+      example:
+        duration: 2s
         resource_id: sticker_resource_id
         scale_x: 1
         scale_y: 1
@@ -3086,9 +3019,8 @@ components:
           description: 音调，如 +5Hz 升高，-5Hz 降低
           default: +0Hz
         output_path:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Output Path
           description: 输出文件路径（可选）
       type: object
@@ -3122,8 +3054,7 @@ components:
           title: Duration Seconds
           description: 合成耗时（秒）
           default: 0.0
-          examples:
-          - 5.0
+          example: 5.0
         voice:
           type: string
           title: Voice
@@ -3209,9 +3140,7 @@ components:
           title: Start
           description: 片段在时间线上的起始时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 0s
-          - 0
+          example: 0s
         duration:
           anyOf:
           - type: string
@@ -3219,13 +3148,10 @@ components:
           title: Duration
           description: 持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 3s
-          - 3000000
+          example: 3s
         font:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Font
           description: 字体名称
         font_size:
@@ -3279,37 +3205,32 @@ components:
           description: 行间距
           default: 0
         border:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Border
           description: 描边设置
         background:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Background
           description: 背景设置
         shadow:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Shadow
           description: 阴影设置
         clip_settings:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Clip Settings
           description: 图像调节
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 目标轨道名称
       type: object
@@ -3318,8 +3239,8 @@ components:
       - start
       - duration
       title: TextAdd
-      examples:
-      - duration: 3s
+      example:
+        duration: 3s
         font_size: 10
         start: 0s
         text: 标题文本
@@ -3330,8 +3251,7 @@ components:
           type: integer
           title: Microseconds
           description: 微秒数（μs）。1 秒 = 1,000,000 微秒。
-          examples:
-          - 5000000
+          example: 5000000
       type: object
       required:
       - microseconds
@@ -3360,18 +3280,13 @@ components:
           title: Time Input
           description: 时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如 5000000
             表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 5s
-          - 1m30s
-          - 5000000
+          example: 5s
       type: object
       required:
       - time_input
       title: TimeParse
-      examples:
-      - time_input: 5s
-      - time_input: 1m30s
-      - time_input: 5000000
+      example:
+        time_input: 5s
     TimeParseResponse:
       type: object
       properties:
@@ -3382,8 +3297,6 @@ components:
           type: integer
           description: 解析后的微秒数
           example: 5000000
-          examples:
-          - 5000000
         message:
           type: string
           description: 操作结果消息
@@ -3395,9 +3308,8 @@ components:
           title: Track Type
           description: '轨道类型: video / audio / text / effect / filter / sticker'
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 轨道名称（同类型多条时必填）
         mute:
@@ -3480,13 +3392,10 @@ components:
           anyOf:
           - type: string
           - type: integer
-          - type: 'null'
           title: Duration
           description: 转场持续时长。持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。不填则使用转场默认值。
-          examples:
-          - 0.5s
-          - 500000
+          example: 0.5s
       type: object
       required:
       - segment_id
@@ -3545,21 +3454,15 @@ components:
           title: Start
           description: 片段在时间线上的起始时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。
-          examples:
-          - 0s
-          - 0
-          - 5000000
+          example: 0s
         duration:
           anyOf:
           - type: string
           - type: integer
-          - type: 'null'
           title: Duration
           description: 持续时长，不是结束时间。时间值。剪映内部单位为微秒（μs），1 秒 = 1,000,000 微秒。传数字或纯数字字符串时按微秒处理，例如
             5000000 表示 5 秒；也可传带单位字符串，例如 "0.5s"、"5s"、"1m30s"、"1h2m3s"。不填则自动根据素材时长计算。
-          examples:
-          - 5s
-          - 5000000
+          example: 5s
         speed:
           type: number
           title: Speed
@@ -3571,46 +3474,39 @@ components:
           description: 音量
           default: 1.0
         alpha:
-          anyOf:
-          - type: number
-          - type: 'null'
+          type: number
+          nullable: true
           title: Alpha
           description: 不透明度 0~1
         transform_x:
-          anyOf:
-          - type: number
-          - type: 'null'
+          type: number
+          nullable: true
           title: Transform X
           description: X 位移
         transform_y:
-          anyOf:
-          - type: number
-          - type: 'null'
+          type: number
+          nullable: true
           title: Transform Y
           description: Y 位移
         scale_x:
-          anyOf:
-          - type: number
-          - type: 'null'
+          type: number
+          nullable: true
           title: Scale X
           description: X 缩放
         scale_y:
-          anyOf:
-          - type: number
-          - type: 'null'
+          type: number
+          nullable: true
           title: Scale Y
           description: Y 缩放
         clip_settings:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Clip Settings
           description: 图像调节设置
         round_corner:
-          anyOf:
-          - type: number
-          - type: 'null'
+          type: number
+          nullable: true
           title: Round Corner
           description: 剪映原生圆角 0~100，8 会写入 0.08
         glow_outline:
@@ -3618,51 +3514,44 @@ components:
           - additionalProperties: true
             type: object
           - type: boolean
-          - type: 'null'
           title: Glow Outline
           description: 剪映发光描边，如 {"color":"#000000","size":10}；true 使用黑色大小 10
         effects:
-          anyOf:
-          - items:
-              additionalProperties: true
-              type: object
-            type: array
-          - type: 'null'
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          nullable: true
           title: Effects
           description: 片段级视频特效列表
         filters:
-          anyOf:
-          - items:
-              additionalProperties: true
-              type: object
-            type: array
-          - type: 'null'
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          nullable: true
           title: Filters
           description: 片段级滤镜列表
         mask:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Mask
           description: 片段级蒙版设置
         background_filling:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
+          nullable: true
           title: Background Filling
           description: 片段背景填充设置
         mix_mode:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Mix Mode
           description: 混合模式名称
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 目标轨道名称
       type: object
@@ -3670,14 +3559,11 @@ components:
       - video_path
       - start
       title: VideoAdd
-      examples:
-      - duration: 5s
+      example:
+        duration: 5s
         start: 0s
         track_name: main
         video_path: https://example.com/image.png
-      - duration: 3000000
-        start: 5000000
-        video_path: D:/materials/clip.mp4
     VideoBatch:
       properties:
         video_infos:
@@ -3689,9 +3575,8 @@ components:
           description: 视频/图片信息列表。每项至少包含 video_path、start、end；start/end 为微秒（μs），end
             是绝对结束时间，不是持续时长。示例：[{"video_path":"/path/a.png","start":0,"end":5000000}]。
         track_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
+          nullable: true
           title: Track Name
           description: 目标轨道名称
       type: object

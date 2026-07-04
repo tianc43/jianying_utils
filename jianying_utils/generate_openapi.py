@@ -1,5 +1,5 @@
 """
-Generate the complete OpenAPI 3.1.0 specification for jianying_utils.
+Generate the complete OpenAPI 3.0.3 specification for jianying_utils.
 This script reads the existing spec as a base and augments it with
 proper response schemas derived from the server.py implementation.
 
@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
+OPENAPI_VERSION = "3.0.3"
 
 # ── Base schemas reused across responses ──────────────────────────────
 
@@ -494,7 +496,25 @@ def _merge_time_doc(prop: dict[str, Any], doc: dict[str, Any]) -> None:
         prop["description"] = doc["description"]
     elif prop.get("description"):
         prop["description"] = prop["description"].replace("如 5s", "如 \"5s\"")
-    prop.setdefault("examples", doc["examples"])
+    prop.setdefault("examples", _examples_for_schema(prop, doc["examples"]))
+
+
+def _examples_for_schema(prop: dict[str, Any], examples: list[Any]) -> list[Any]:
+    if _schema_allows_string(prop):
+        return examples
+    numeric_examples = [example for example in examples if isinstance(example, int | float)]
+    return numeric_examples or examples
+
+
+def _schema_allows_string(schema: dict[str, Any]) -> bool:
+    schema_type = schema.get("type")
+    if schema_type == "string" or (isinstance(schema_type, list) and "string" in schema_type):
+        return True
+    for key in ("anyOf", "oneOf", "allOf"):
+        options = schema.get(key)
+        if isinstance(options, list) and any(isinstance(option, dict) and _schema_allows_string(option) for option in options):
+            return True
+    return False
 
 
 def _patch_operation_examples(operation: dict[str, Any]) -> None:
@@ -531,10 +551,86 @@ def _describe_schema(name: str) -> str:
     return descriptions.get(name, "Successful Response")
 
 
+def apply_dify_openapi_compatibility(spec: dict) -> dict:
+    """Convert FastAPI's OpenAPI 3.1 nullable schemas to Dify-friendly 3.0.3."""
+    spec = copy.deepcopy(spec)
+    spec["openapi"] = OPENAPI_VERSION
+    _convert_nullable_anyof(spec, spec)
+    _convert_schema_examples(spec)
+    return spec
+
+
+def _convert_nullable_anyof(node: Any, root: dict[str, Any]) -> None:
+    if isinstance(node, dict):
+        any_of = node.get("anyOf")
+        if isinstance(any_of, list):
+            null_options = [option for option in any_of if isinstance(option, dict) and option.get("type") == "null"]
+            non_null_options = [
+                option for option in any_of if not (isinstance(option, dict) and option.get("type") == "null")
+            ]
+            if null_options and non_null_options:
+                metadata = {
+                    key: value
+                    for key, value in node.items()
+                    if key not in {"anyOf"} and key not in non_null_options[0]
+                }
+                if len(non_null_options) == 1:
+                    replacement = _resolve_schema_ref(copy.deepcopy(non_null_options[0]), root)
+                    if "type" in replacement:
+                        replacement["nullable"] = True
+                else:
+                    replacement = {"anyOf": copy.deepcopy(non_null_options)}
+                replacement.update(metadata)
+                node.clear()
+                node.update(replacement)
+
+        for value in list(node.values()):
+            _convert_nullable_anyof(value, root)
+    elif isinstance(node, list):
+        for item in node:
+            _convert_nullable_anyof(item, root)
+
+
+def _resolve_schema_ref(schema: dict[str, Any], root: dict[str, Any]) -> dict[str, Any]:
+    ref = schema.get("$ref")
+    if not isinstance(ref, str) or not ref.startswith("#/"):
+        return schema
+
+    resolved: Any = root
+    for part in ref[2:].split("/"):
+        if not isinstance(resolved, dict) or part not in resolved:
+            return schema
+        resolved = resolved[part]
+
+    if not isinstance(resolved, dict):
+        return schema
+    merged = copy.deepcopy(resolved)
+    for key, value in schema.items():
+        if key != "$ref":
+            merged[key] = value
+    return merged
+
+
+def _convert_schema_examples(node: Any) -> None:
+    if isinstance(node, dict):
+        examples = node.pop("examples", None)
+        if examples is not None and "example" not in node:
+            if isinstance(examples, list) and examples:
+                node["example"] = examples[0]
+            elif examples:
+                node["example"] = examples
+        for value in list(node.values()):
+            _convert_schema_examples(value)
+    elif isinstance(node, list):
+        for item in node:
+            _convert_schema_examples(item)
+
+
 def generate(input_path: str | None, output_path: str):
     spec = load_existing_spec(input_path) if input_path else load_dynamic_spec()
     spec = apply_response_schemas(spec)
     spec = apply_time_unit_docs(spec)
+    spec = apply_dify_openapi_compatibility(spec)
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(spec, f, ensure_ascii=False, indent=2)

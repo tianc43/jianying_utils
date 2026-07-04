@@ -107,13 +107,7 @@ app.openapi = _load_static_openapi
 
 @app.get("/openapi.yaml", include_in_schema=False, tags=["系统"])
 def openapi_yaml():
-    """直接返回静态 openapi.yaml 文件"""
-    if _OPENAPI_YAML.exists():
-        return Response(
-            content=_OPENAPI_YAML.read_text(encoding="utf-8"),
-            media_type="application/x-yaml"
-        )
-    # 降级：从 JSON 转换
+    """返回带当前部署地址的 OpenAPI YAML。"""
     import yaml
     spec = _load_static_openapi()
     yaml_str = yaml.dump(spec, allow_unicode=True, default_flow_style=False, sort_keys=False)
