@@ -75,6 +75,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     root_path=ROOT_PATH,
+    root_path_in_servers=False,
     servers=[{"url": DEPLOY_URL, "description": "剪映草稿 API 服务器"}],
     generate_unique_id_function=lambda route: route.name,
 )
