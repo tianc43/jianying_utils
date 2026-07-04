@@ -185,7 +185,7 @@ Content-Type: application/json
 
 常用可选参数包括 `reference_id`、`temperature`、`top_p`、`prosody`、`sample_rate`、`mp3_bitrate`、`latency`、`max_new_tokens`、`repetition_penalty` 等。生成文件默认保存到 `JIANYING_TTS_DIR`，并返回 `/util/tts/download/{filename}` 下载地址。
 
-`prosody` 应传 JSON object，例如 `{"speed":1.15,"volume":0,"normalize_loudness":true}`；服务端也兼容 Dify 可能传入的 JSON 字符串。
+`prosody` 应传 JSON object，例如 `{"speed":1.15,"volume":0,"normalize_loudness":true}`；不要传 JSON 字符串。
 
 ## Dify 生成并保存图片素材
 

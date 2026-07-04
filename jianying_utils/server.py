@@ -16,7 +16,6 @@ import re
 import base64
 import binascii
 import hashlib
-import ast
 import socket
 import urllib.error
 import urllib.parse
@@ -33,7 +32,7 @@ from fastapi.staticfiles import StaticFiles
 import zipfile
 import io
 from fastapi.responses import Response, FileResponse, StreamingResponse
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 import json as _json
 
 from jianying_utils import (
@@ -503,11 +502,6 @@ class VideoAdd(BaseModel):
     mix_mode: Optional[str] = Field(None, description="混合模式名称")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
 
-    @field_validator("clip_settings", "mask", "background_filling", mode="before")
-    @classmethod
-    def _coerce_optional_object_fields(cls, value: Any, info: Any) -> Any:
-        return _parse_optional_object(value, info.field_name)
-
 class VideoBatch(BaseModel):
     video_infos: List[Dict[str, Any]] = Field(
         ...,
@@ -596,11 +590,6 @@ class TextAdd(BaseModel):
     clip_settings: Optional[Dict[str, Any]] = Field(None, description="图像调节")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
 
-    @field_validator("border", "background", "shadow", "clip_settings", mode="before")
-    @classmethod
-    def _coerce_optional_object_fields(cls, value: Any, info: Any) -> Any:
-        return _parse_optional_object(value, info.field_name)
-
 class CaptionsAdd(BaseModel):
     model_config = {
         "json_schema_extra": {
@@ -636,11 +625,6 @@ class CaptionsAdd(BaseModel):
     clip_settings: Optional[Dict[str, Any]] = Field(None, description="图像调节")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
     has_shadow: bool = Field(False, description="启用阴影")
-
-    @field_validator("border", "background", "shadow", "clip_settings", mode="before")
-    @classmethod
-    def _coerce_optional_object_fields(cls, value: Any, info: Any) -> Any:
-        return _parse_optional_object(value, info.field_name)
 
 class EffectAdd(BaseModel):
     model_config = {
@@ -756,27 +740,6 @@ class FishProsodyControl(BaseModel):
     volume: float = Field(0.0, description="音量调整 dB")
     normalize_loudness: bool = Field(True, description="是否规范化响度（S2-Pro）")
 
-def _parse_optional_object(value: Any, field_name: str) -> Any:
-    if value in (None, ""):
-        return None
-    if isinstance(value, dict):
-        return value
-    if isinstance(value, str):
-        text = value.strip()
-        if not text:
-            return None
-        try:
-            parsed = _json.loads(text)
-        except _json.JSONDecodeError:
-            try:
-                parsed = ast.literal_eval(text)
-            except (ValueError, SyntaxError) as exc:
-                raise ValueError(f"{field_name} 必须是 JSON object") from exc
-        if not isinstance(parsed, dict):
-            raise ValueError(f"{field_name} 必须是 JSON object")
-        return parsed
-    return value
-
 class FishTTSRequest(BaseModel):
     model_config = {
         "json_schema_extra": {
@@ -810,11 +773,6 @@ class FishTTSRequest(BaseModel):
     min_chunk_length: Optional[int] = Field(None, ge=0, le=100, description="最小分块字符数")
     condition_on_previous_chunks: Optional[bool] = Field(None, description="是否使用前文音频作为上下文")
     early_stop_threshold: Optional[float] = Field(None, ge=0, le=1, description="批处理早停阈值")
-
-    @field_validator("prosody", mode="before")
-    @classmethod
-    def _coerce_prosody(cls, value: Any) -> Any:
-        return _parse_optional_object(value, "prosody")
 
 class ImageB64SaveRequest(BaseModel):
     model_config = {
