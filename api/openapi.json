@@ -2307,6 +2307,48 @@
         }
       }
     },
+    "/material/images/generate": {
+      "post": {
+        "tags": [
+          "素材"
+        ],
+        "summary": "生成并保存图片素材",
+        "description": "Call an OpenAI-compatible image API server-side, save the image, and return short URLs.",
+        "operationId": "material_generate_image",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "图片生成保存结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageGenerateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/material/images/chunks": {
       "post": {
         "tags": [
@@ -3863,6 +3905,252 @@
             "filename": "generated-cover.png"
           }
         ]
+      },
+      "ImageGenerateRequest": {
+        "properties": {
+          "endpoint_url": {
+            "type": "string",
+            "title": "Endpoint Url",
+            "description": "OpenAI 兼容图片生成接口 URL，例如 https://host/v1/images/generations"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key",
+            "description": "上游图片接口 API key"
+          },
+          "api_key_header": {
+            "type": "string",
+            "title": "Api Key Header",
+            "description": "API key 请求头。Authorization 会自动加 Bearer，其它值如 x-api-key 会原样发送 key",
+            "default": "Authorization"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "图片模型名称",
+            "default": "gpt-image-2"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt",
+            "description": "图片生成提示词"
+          },
+          "response_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Format",
+            "description": "上游返回格式，支持 b64_json 或 url；置空则不发送",
+            "default": "b64_json"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality",
+            "description": "图片质量",
+            "default": "low"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size",
+            "description": "图片尺寸",
+            "default": "1024x576"
+          },
+          "output_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Format",
+            "description": "输出格式",
+            "default": "webp"
+          },
+          "output_compression": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Compression",
+            "description": "输出压缩质量",
+            "default": 70
+          },
+          "n": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N",
+            "description": "生成数量；本端点只保存第一张"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename",
+            "description": "期望文件名；服务端会清理路径并按真实图片类型修正扩展名"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "title": "Timeout Seconds",
+            "description": "单次上游请求超时秒数，最大 3600",
+            "default": 900,
+            "examples": [
+              5.0
+            ]
+          },
+          "max_retries": {
+            "type": "integer",
+            "title": "Max Retries",
+            "description": "上游网络失败重试次数，最大 5",
+            "default": 2
+          },
+          "headers": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headers",
+            "description": "额外上游请求头"
+          },
+          "extra_body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Body",
+            "description": "透传给上游的额外 JSON 字段"
+          }
+        },
+        "type": "object",
+        "required": [
+          "endpoint_url",
+          "prompt"
+        ],
+        "title": "ImageGenerateRequest",
+        "examples": [
+          {
+            "api_key": "sk-...",
+            "endpoint_url": "https://example.com/v1/images/generations",
+            "filename": "storyboard-01",
+            "max_retries": 2,
+            "model": "gpt-image-2",
+            "output_compression": 70,
+            "output_format": "webp",
+            "prompt": "手绘插画风格的心理学短视频分镜",
+            "quality": "low",
+            "response_format": "b64_json",
+            "size": "1024x576",
+            "timeout_seconds": 900
+          }
+        ]
+      },
+      "ImageGenerateResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "操作是否成功"
+          },
+          "message": {
+            "type": "string",
+            "description": "操作结果消息"
+          },
+          "filename": {
+            "type": "string",
+            "description": "保存后的文件名"
+          },
+          "file_path": {
+            "type": "string",
+            "description": "服务端本地文件路径"
+          },
+          "download_url": {
+            "type": "string",
+            "description": "图片下载 URL"
+          },
+          "static_url": {
+            "type": "string",
+            "description": "可直接作为素材路径使用的静态 URL"
+          },
+          "media_type": {
+            "type": "string",
+            "description": "图片 MIME 类型"
+          },
+          "size": {
+            "type": "integer",
+            "description": "图片字节数"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "图片内容 SHA256"
+          },
+          "image_url": {
+            "type": "string",
+            "description": "推荐传给剪映后续素材接口的图片 URL"
+          },
+          "upstream_status": {
+            "type": "integer",
+            "description": "上游图片接口 HTTP 状态码"
+          },
+          "upstream_request_id": {
+            "type": "string",
+            "description": "上游响应 request id（如果有）"
+          }
+        },
+        "additionalProperties": false
       },
       "ImageSaveResponse": {
         "type": "object",

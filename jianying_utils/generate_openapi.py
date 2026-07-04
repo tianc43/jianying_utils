@@ -259,6 +259,24 @@ RESPONSE_SCHEMAS = {
         },
         "additionalProperties": False
     },
+    "ImageGenerateResponse": {
+        "type": "object",
+        "properties": {
+            "success": {"type": "boolean", "description": "操作是否成功"},
+            "message": {"type": "string", "description": "操作结果消息"},
+            "filename": {"type": "string", "description": "保存后的文件名"},
+            "file_path": {"type": "string", "description": "服务端本地文件路径"},
+            "download_url": {"type": "string", "description": "图片下载 URL"},
+            "static_url": {"type": "string", "description": "可直接作为素材路径使用的静态 URL"},
+            "media_type": {"type": "string", "description": "图片 MIME 类型"},
+            "size": {"type": "integer", "description": "图片字节数"},
+            "sha256": {"type": "string", "description": "图片内容 SHA256"},
+            "image_url": {"type": "string", "description": "推荐传给剪映后续素材接口的图片 URL"},
+            "upstream_status": {"type": "integer", "description": "上游图片接口 HTTP 状态码"},
+            "upstream_request_id": {"type": "string", "description": "上游响应 request id（如果有）"}
+        },
+        "additionalProperties": False
+    },
     "MetadataListResponse": {
         "type": "object",
         "properties": {
@@ -327,6 +345,7 @@ PATH_RESPONSE_MAP = {
     ("/material/video-info", "get"): "MaterialVideoInfoResponse",
     ("/material/audio-duration", "get"): "MaterialAudioDurationResponse",
     ("/material/images", "post"): "ImageSaveResponse",
+    ("/material/images/generate", "post"): "ImageGenerateResponse",
     ("/util/time/parse", "post"): "TimeParseResponse",
     ("/util/time/format", "post"): "TimeFormatResponse",
 }
@@ -506,6 +525,7 @@ def _describe_schema(name: str) -> str:
         "MaterialVideoInfoResponse": "视频/图片素材信息",
         "MaterialAudioDurationResponse": "音频时长信息",
         "ImageSaveResponse": "图片保存结果",
+        "ImageGenerateResponse": "图片生成保存结果",
         "MetadataListResponse": "元数据查询结果",
     }
     return descriptions.get(name, "Successful Response")

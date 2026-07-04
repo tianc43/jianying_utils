@@ -161,6 +161,7 @@ export JIANYING_LOG_LEVEL=DEBUG
 | **素材** | `GET /material/video-info` | 获取视频信息 |
 | | `GET /material/audio-duration` | 获取音频时长 |
 | | `POST /material/images` | 保存 Base64 图片并返回下载 URL |
+| | `POST /material/images/generate` | 调用图片接口、保存图片并返回短 URL |
 | **工具** | `POST /util/time/parse` | 解析时间 |
 | | `POST /util/time/format` | 格式化时间 |
 | | `POST /util/tts` | 文本转语音（Edge-TTS） |
@@ -183,6 +184,35 @@ Content-Type: application/json
 ```
 
 常用可选参数包括 `reference_id`、`temperature`、`top_p`、`prosody`、`sample_rate`、`mp3_bitrate`、`latency`、`max_new_tokens`、`repetition_penalty` 等。生成文件默认保存到 `JIANYING_TTS_DIR`，并返回 `/util/tts/download/{filename}` 下载地址。
+
+`prosody` 应传 JSON object，例如 `{"speed":1.15,"volume":0,"normalize_loudness":true}`；服务端也兼容 Dify 可能传入的 JSON 字符串。
+
+## Dify 生成并保存图片素材
+
+推荐让后台直接调用 OpenAI 兼容图片接口并保存文件，Dify 只接收短 JSON 响应，避免在工作流节点间传递大型 `b64_json` 响应导致 chunked 读取中断。
+
+```http
+POST /material/images/generate
+Content-Type: application/json
+
+{
+  "endpoint_url": "https://tianc43.xyz/v1/images/generations",
+  "api_key": "{{ IMAGE_API_KEY }}",
+  "api_key_header": "Authorization",
+  "model": "gpt-image-2",
+  "prompt": "{{ storyboard_prompt }}",
+  "response_format": "b64_json",
+  "quality": "low",
+  "size": "1024x576",
+  "output_format": "webp",
+  "output_compression": 70,
+  "filename": "storyboard-01",
+  "timeout_seconds": 900,
+  "max_retries": 2
+}
+```
+
+后续 `POST /drafts/{id}/videos` 的 `video_path` 优先使用响应里的 `image_url` 或 `static_url`。如果上游返回 401/403/422，服务日志会保留上游错误体和 request id，方便判断是 key、模型、额度还是内容策略问题。
 
 ## Dify 保存 b64_json 图片素材
 

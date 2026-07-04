@@ -16,6 +16,12 @@ import re
 import base64
 import binascii
 import hashlib
+import ast
+import socket
+import urllib.error
+import urllib.parse
+import urllib.request
+from http.client import IncompleteRead
 import time
 import tempfile
 from typing import Optional, Dict, Any, List, Union
@@ -27,7 +33,7 @@ from fastapi.staticfiles import StaticFiles
 import zipfile
 import io
 from fastapi.responses import Response, FileResponse, StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 import json as _json
 
 from jianying_utils import (
@@ -150,6 +156,10 @@ os.makedirs(_TTS_DIR, exist_ok=True)
 # Image material output directory. Defaults under project root so /static URLs work.
 _IMAGE_DIR = os.environ.get("JIANYING_IMAGE_DIR", str(_PROJECT_ROOT / "uploads" / "images"))
 _IMAGE_MAX_BYTES = int(os.environ.get("JIANYING_IMAGE_MAX_BYTES", str(20 * 1024 * 1024)))
+_IMAGE_UPSTREAM_MAX_BODY_BYTES = int(os.environ.get(
+    "JIANYING_IMAGE_UPSTREAM_MAX_BODY_BYTES",
+    str((_IMAGE_MAX_BYTES * 4 // 3) + (2 * 1024 * 1024)),
+))
 os.makedirs(_IMAGE_DIR, exist_ok=True)
 _IMAGE_CHUNK_DIR = os.environ.get("JIANYING_IMAGE_CHUNK_DIR", os.path.join(_IMAGE_DIR, "_chunks"))
 os.makedirs(_IMAGE_CHUNK_DIR, exist_ok=True)
@@ -265,6 +275,164 @@ def _save_image_bytes(data: bytes, filename_hint: Optional[str] = None) -> dict:
         size=len(data),
         sha256=digest,
     )
+
+def _ensure_http_url(url: str, label: str = "url") -> str:
+    value = (url or "").strip()
+    parsed = urllib.parse.urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise HTTPException(400, f"{label} 必须是 http/https URL")
+    return value
+
+def _read_limited(response, max_bytes: int) -> bytes:
+    data = response.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        raise HTTPException(413, f"上游响应超过大小限制: {max_bytes} bytes")
+    return data
+
+def _summarize_upstream_error(status_code: int, headers: dict[str, str], body: bytes) -> str:
+    text = body.decode("utf-8", errors="replace").strip()
+    if len(text) > 1200:
+        text = text[:1200] + "...(truncated)"
+    request_id = (
+        headers.get("x-request-id")
+        or headers.get("x-client-request-id")
+        or headers.get("cf-ray")
+        or ""
+    )
+    prefix = f"上游图片接口返回 HTTP {status_code}"
+    if request_id:
+        prefix += f" request_id={request_id}"
+    return f"{prefix}: {text}" if text else prefix
+
+def _post_json(url: str, payload: dict, headers: dict[str, str], timeout_seconds: int) -> tuple[int, dict[str, str], bytes]:
+    data = _json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request_headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "JianYingUtils/0.2 image-material-proxy",
+        **headers,
+    }
+    request = urllib.request.Request(
+        _ensure_http_url(url, "endpoint_url"),
+        data=data,
+        method="POST",
+        headers=request_headers,
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            return response.status, dict(response.headers.items()), _read_limited(response, _IMAGE_UPSTREAM_MAX_BODY_BYTES)
+    except urllib.error.HTTPError as exc:
+        response_headers = dict(exc.headers.items()) if exc.headers else {}
+        error_body = exc.read(2048)
+        detail = _summarize_upstream_error(exc.code, response_headers, error_body)
+        logger.warning("%s", detail)
+        raise HTTPException(exc.code, detail) from exc
+
+def _fetch_image_url(url: str, timeout_seconds: int) -> bytes:
+    request = urllib.request.Request(
+        _ensure_http_url(url, "image url"),
+        method="GET",
+        headers={
+            "Accept": "image/png,image/jpeg,image/webp,image/gif,*/*;q=0.8",
+            "User-Agent": "JianYingUtils/0.2 image-material-proxy",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            content_type = response.headers.get("Content-Type", "")
+            if content_type and not content_type.lower().startswith("image/"):
+                raise HTTPException(415, f"上游图片 URL 返回非图片类型: {content_type}")
+            data = _read_limited(response, _IMAGE_MAX_BYTES)
+    except urllib.error.HTTPError as exc:
+        response_headers = dict(exc.headers.items()) if exc.headers else {}
+        detail = _summarize_upstream_error(exc.code, response_headers, exc.read(2048))
+        logger.warning("%s", detail)
+        raise HTTPException(exc.code, f"上游图片 URL 下载失败: {detail}") from exc
+    _detect_image(data)
+    return data
+
+def _call_image_generation(body: "ImageGenerateRequest") -> dict:
+    payload: dict[str, Any] = dict(body.extra_body or {})
+    payload["model"] = body.model
+    payload["prompt"] = body.prompt
+    if body.response_format:
+        payload["response_format"] = body.response_format
+    for key in ("quality", "size", "output_format", "output_compression", "n"):
+        value = getattr(body, key)
+        if value is not None:
+            payload[key] = value
+
+    headers: dict[str, str] = {}
+    if body.api_key:
+        header_name = (body.api_key_header or "Authorization").strip() or "Authorization"
+        if header_name.lower() == "authorization":
+            headers[header_name] = f"Bearer {body.api_key}"
+        else:
+            headers[header_name] = body.api_key
+    for key, value in (body.headers or {}).items():
+        if value is not None:
+            headers[str(key)] = str(value)
+
+    retries = max(0, min(body.max_retries, 5))
+    timeout_seconds = max(1, min(body.timeout_seconds, 3600))
+    last_error: Exception | None = None
+
+    for attempt in range(retries + 1):
+        try:
+            status, response_headers, response_body = _post_json(
+                body.endpoint_url,
+                payload,
+                headers,
+                timeout_seconds,
+            )
+            try:
+                upstream_json = _json.loads(response_body.decode("utf-8"))
+            except UnicodeDecodeError as exc:
+                raise HTTPException(502, "上游图片接口返回了非 UTF-8 JSON") from exc
+            except _json.JSONDecodeError as exc:
+                raise HTTPException(502, f"上游图片接口返回了无效 JSON: {response_body[:300]!r}") from exc
+
+            images = upstream_json.get("data") or []
+            if not images or not isinstance(images, list):
+                raise HTTPException(502, "上游图片接口响应缺少 data[0]")
+            first = images[0] or {}
+            if not isinstance(first, dict):
+                raise HTTPException(502, "上游图片接口 data[0] 格式无效")
+
+            if first.get("b64_json"):
+                image_bytes = _decode_b64_json(str(first["b64_json"]))
+            elif first.get("url"):
+                image_bytes = _fetch_image_url(str(first["url"]), timeout_seconds)
+            else:
+                raise HTTPException(502, "上游图片接口响应缺少 b64_json 或 url")
+
+            result = _save_image_bytes(image_bytes, body.filename)
+            normalized_headers = {str(k).lower(): str(v) for k, v in response_headers.items()}
+            result.update(
+                image_url=result.get("static_url") or result.get("download_url", ""),
+                upstream_status=status,
+                upstream_request_id=(
+                    normalized_headers.get("x-request-id")
+                    or normalized_headers.get("x-client-request-id")
+                    or normalized_headers.get("cf-ray", "")
+                ),
+            )
+            return result
+        except HTTPException:
+            raise
+        except (TimeoutError, socket.timeout, urllib.error.URLError, IncompleteRead, OSError) as exc:
+            last_error = exc
+            logger.warning(
+                "调用上游图片接口失败，attempt=%d/%d endpoint=%s error=%s",
+                attempt + 1,
+                retries + 1,
+                body.endpoint_url,
+                exc,
+            )
+            if attempt >= retries:
+                break
+
+    raise HTTPException(502, f"调用上游图片接口失败: {last_error}") from last_error
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Models
@@ -573,6 +741,27 @@ class FishProsodyControl(BaseModel):
     volume: float = Field(0.0, description="音量调整 dB")
     normalize_loudness: bool = Field(True, description="是否规范化响度（S2-Pro）")
 
+def _parse_optional_object(value: Any, field_name: str) -> Any:
+    if value in (None, ""):
+        return None
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        try:
+            parsed = _json.loads(text)
+        except _json.JSONDecodeError:
+            try:
+                parsed = ast.literal_eval(text)
+            except (ValueError, SyntaxError) as exc:
+                raise ValueError(f"{field_name} 必须是 JSON object") from exc
+        if not isinstance(parsed, dict):
+            raise ValueError(f"{field_name} 必须是 JSON object")
+        return parsed
+    return value
+
 class FishTTSRequest(BaseModel):
     model_config = {
         "json_schema_extra": {
@@ -607,6 +796,11 @@ class FishTTSRequest(BaseModel):
     condition_on_previous_chunks: Optional[bool] = Field(None, description="是否使用前文音频作为上下文")
     early_stop_threshold: Optional[float] = Field(None, ge=0, le=1, description="批处理早停阈值")
 
+    @field_validator("prosody", mode="before")
+    @classmethod
+    def _coerce_prosody(cls, value: Any) -> Any:
+        return _parse_optional_object(value, "prosody")
+
 class ImageB64SaveRequest(BaseModel):
     model_config = {
         "json_schema_extra": {
@@ -628,6 +822,45 @@ class ImageB64ChunkSaveRequest(BaseModel):
     total: int = Field(..., description="分片总数")
     chunk: str = Field(..., description="当前 Base64 文本分片")
     filename: Optional[str] = Field(None, description="期望文件名；仅最后一个分片用于保存结果")
+
+class ImageGenerateRequest(BaseModel):
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "endpoint_url": "https://example.com/v1/images/generations",
+                    "api_key": "sk-...",
+                    "model": "gpt-image-2",
+                    "prompt": "手绘插画风格的心理学短视频分镜",
+                    "response_format": "b64_json",
+                    "quality": "low",
+                    "size": "1024x576",
+                    "output_format": "webp",
+                    "output_compression": 70,
+                    "filename": "storyboard-01",
+                    "timeout_seconds": 900,
+                    "max_retries": 2,
+                }
+            ]
+        }
+    }
+
+    endpoint_url: str = Field(..., description="OpenAI 兼容图片生成接口 URL，例如 https://host/v1/images/generations")
+    api_key: Optional[str] = Field(None, description="上游图片接口 API key")
+    api_key_header: str = Field("Authorization", description="API key 请求头。Authorization 会自动加 Bearer，其它值如 x-api-key 会原样发送 key")
+    model: str = Field("gpt-image-2", description="图片模型名称")
+    prompt: str = Field(..., description="图片生成提示词")
+    response_format: Optional[str] = Field("b64_json", description="上游返回格式，支持 b64_json 或 url；置空则不发送")
+    quality: Optional[str] = Field("low", description="图片质量")
+    size: Optional[str] = Field("1024x576", description="图片尺寸")
+    output_format: Optional[str] = Field("webp", description="输出格式")
+    output_compression: Optional[int] = Field(70, description="输出压缩质量")
+    n: Optional[int] = Field(None, description="生成数量；本端点只保存第一张")
+    filename: Optional[str] = Field(None, description="期望文件名；服务端会清理路径并按真实图片类型修正扩展名")
+    timeout_seconds: int = Field(900, description="单次上游请求超时秒数，最大 3600")
+    max_retries: int = Field(2, description="上游网络失败重试次数，最大 5")
+    headers: Optional[Dict[str, str]] = Field(None, description="额外上游请求头")
+    extra_body: Optional[Dict[str, Any]] = Field(None, description="透传给上游的额外 JSON 字段")
 
 class TTSVoiceItem(BaseModel):
     ShortName: str = Field(..., description="发音人标识")
@@ -656,6 +889,11 @@ class ImageSaveResponse(BaseModel):
     media_type: str = Field("", description="图片 MIME 类型")
     size: int = Field(0, description="图片字节数")
     sha256: str = Field("", description="图片内容 SHA256")
+
+class ImageGenerateResponse(ImageSaveResponse):
+    image_url: str = Field("", description="推荐传给剪映后续素材接口的图片 URL")
+    upstream_status: int = Field(0, description="上游图片接口 HTTP 状态码")
+    upstream_request_id: str = Field("", description="上游响应 request id（如果有）")
 
 class TTSVoicesResponse(BaseModel):
     success: bool = Field(True, description="操作是否成功")
@@ -1332,6 +1570,11 @@ def material_save_image(body: ImageB64SaveRequest):
     """Decode b64_json image data, save it, and return URLs usable by workflows."""
     data = _decode_b64_json(body.b64_json)
     return _save_image_bytes(data, body.filename)
+
+@app.post("/material/images/generate", tags=["素材"], summary="生成并保存图片素材", response_model=ImageGenerateResponse)
+def material_generate_image(body: ImageGenerateRequest):
+    """Call an OpenAI-compatible image API server-side, save the image, and return short URLs."""
+    return _call_image_generation(body)
 
 @app.post("/material/images/chunks", tags=["素材"], summary="分片保存 Base64 图片素材")
 def material_save_image_chunk(body: ImageB64ChunkSaveRequest):
