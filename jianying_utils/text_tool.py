@@ -3,6 +3,7 @@
 适用于 Dify 工作流的代码节点。
 """
 
+import json
 from typing import Optional, Dict, Any, List, Union
 
 from pyJianYingDraft import (
@@ -23,6 +24,7 @@ class TextTool:
                  font: Optional[str] = None,
                  font_size: float = 8.0,
                  text_color: str = "#FFFFFF",
+                 text_gradient: Optional[Dict[str, Any]] = None,
                  alpha: float = 1.0,
                  bold: bool = False,
                  italic: bool = False,
@@ -49,6 +51,7 @@ class TextTool:
             font: 字体名称（通过 MetadataQuery.list_fonts 获取可选值）
             font_size: 字体大小，默认8.0
             text_color: 文字颜色，十六进制格式 "#RRGGBB"，默认白色
+            text_gradient: 渐变填充设置，优先于 text_color
             alpha: 文字不透明度 0~1，默认1.0
             bold: 是否加粗
             italic: 是否斜体
@@ -144,6 +147,7 @@ class TextTool:
         )
 
         script.add_segment(segment, track_name)
+        _apply_text_gradient(script, segment.material_id, text_gradient)
         _context.save_script(script)
 
         return _context.make_result(
@@ -159,6 +163,7 @@ class TextTool:
                            font: Optional[str] = None,
                            font_size: float = 5.0,
                            text_color: str = "#FFFFFF",
+                           text_gradient: Optional[Dict[str, Any]] = None,
                            alpha: float = 1.0,
                            bold: bool = False,
                            italic: bool = False,
@@ -186,6 +191,7 @@ class TextTool:
             font: 字体名称
             font_size: 字体大小，默认5.0（模仿剪映导入字幕的默认值）
             text_color: 文字颜色 "#RRGGBB"
+            text_gradient: 渐变填充设置，优先于 text_color
             alpha: 不透明度 0~1
             bold/italic/underline: 文字样式开关
             alignment: 对齐方式 0=左 1=中 2=右
@@ -281,6 +287,7 @@ class TextTool:
                 shadow=text_shadow
             )
             script.add_segment(segment, track_name)
+            _apply_text_gradient(script, segment.material_id, text_gradient)
             segment_ids.append(segment.segment_id)
 
         _context.save_script(script)
@@ -366,3 +373,105 @@ def _hex_to_rgb(hex_color: str):
     """#RRGGBB → (r, g, b) 0~1"""
     h = hex_color.lstrip('#')
     return (int(h[0:2], 16) / 255.0, int(h[2:4], 16) / 255.0, int(h[4:6], 16) / 255.0)
+
+
+def _apply_text_gradient(script, material_id: str, text_gradient: Optional[Dict[str, Any]]) -> None:
+    """Patch a text material to use Jianying's gradient fill structure."""
+    if not text_gradient:
+        return
+
+    gradient, use_letter_color = _normalize_text_gradient(text_gradient)
+    for material in script.materials.texts:
+        if not isinstance(material, dict) or material.get("id") != material_id:
+            continue
+
+        content = json.loads(material.get("content") or "{}")
+        styles = content.get("styles") or []
+        for style in styles:
+            fill = style.setdefault("fill", {})
+            fill.pop("alpha", None)
+            fill["content"] = {
+                "render_type": "gradient",
+                "gradient": gradient,
+            }
+            if use_letter_color is not None:
+                style["useLetterColor"] = use_letter_color
+
+        material["content"] = json.dumps(content, ensure_ascii=False)
+        material["text_color"] = material.get("text_color") or "#FFFFFF"
+        material["use_effect_default_color"] = False
+        return
+
+    raise ValueError(f"未找到文本素材: {material_id}")
+
+
+def _normalize_text_gradient(text_gradient: Dict[str, Any]):
+    """Normalize API gradient input to the observed Jianying JSON shape."""
+    if not isinstance(text_gradient, dict):
+        raise TypeError("text_gradient 必须是 object")
+
+    source = text_gradient.get("gradient")
+    if source is not None:
+        if not isinstance(source, dict):
+            raise TypeError("text_gradient.gradient 必须是 object")
+        gradient = dict(source)
+    else:
+        gradient = {}
+
+    colors = gradient.get("color", text_gradient.get("colors", text_gradient.get("color")))
+    if not isinstance(colors, list) or len(colors) < 2:
+        raise ValueError("text_gradient.colors 至少需要两个颜色")
+
+    color_values = [_normalize_gradient_color(color) for color in colors]
+    count = len(color_values)
+    alphas = _normalize_number_list(
+        gradient.get("alpha", text_gradient.get("alphas", text_gradient.get("alpha"))),
+        count,
+        1.0,
+        "alpha",
+    )
+    percents = _normalize_number_list(
+        gradient.get("percent", text_gradient.get("percents", text_gradient.get("percent"))),
+        count,
+        None,
+        "percent",
+    )
+    if percents is None:
+        percents = [0.0] if count == 1 else [i / (count - 1) for i in range(count)]
+
+    gradient.update(
+        {
+            "angle": gradient.get("angle", text_gradient.get("angle", 0)),
+            "color": color_values,
+            "alpha": alphas,
+            "percent": percents,
+            "mode": gradient.get("mode", text_gradient.get("mode", "all")),
+        }
+    )
+    use_letter_color = text_gradient.get("useLetterColor", text_gradient.get("use_letter_color"))
+    if use_letter_color is not None:
+        use_letter_color = bool(use_letter_color)
+    return gradient, use_letter_color
+
+
+def _normalize_gradient_color(color):
+    if isinstance(color, str):
+        return list(_hex_to_rgb(color))
+    if isinstance(color, (list, tuple)) and len(color) == 3:
+        values = [float(v) for v in color]
+        if any(v > 1 for v in values):
+            values = [v / 255.0 for v in values]
+        return values
+    raise ValueError("渐变颜色必须是 #RRGGBB 字符串或 RGB 三元组")
+
+
+def _normalize_number_list(value, count: int, default, name: str):
+    if value is None:
+        if default is None:
+            return None
+        return [default] * count
+    if isinstance(value, (int, float)):
+        return [float(value)] * count
+    if not isinstance(value, list) or len(value) != count:
+        raise ValueError(f"text_gradient.{name} 长度必须与 colors 一致")
+    return [float(v) for v in value]

@@ -590,7 +590,14 @@ class TextAdd(BaseModel):
                     "start": "0s",
                     "duration": "3s",
                     "font_size": 10,
-                    "text_color": "#FFFFFF"
+                    "text_color": "#FFFFFF",
+                    "text_gradient": {
+                        "colors": ["#FFBF17", "#2D5094"],
+                        "alphas": [1, 1],
+                        "percents": [0.949115, 0.283923],
+                        "angle": 0,
+                        "mode": "all"
+                    }
                 }
             ]
         }
@@ -602,6 +609,15 @@ class TextAdd(BaseModel):
     font: Optional[str] = Field(None, description="字体名称")
     font_size: float = Field(8.0, description="字体大小")
     text_color: str = Field("#FFFFFF", description="文字颜色 #RRGGBB")
+    text_gradient: Optional[Dict[str, Any]] = Field(
+        None,
+        description=(
+            "文字渐变填充设置，优先于 text_color。"
+            "示例: {\"colors\":[\"#FFBF17\",\"#2D5094\"],"
+            "\"alphas\":[1,1],\"percents\":[0.949115,0.283923],"
+            "\"angle\":0,\"mode\":\"all\"}"
+        ),
+    )
     alpha: float = Field(1.0, description="不透明度 0~1")
     bold: bool = Field(False, description="加粗")
     italic: bool = Field(False, description="斜体")
@@ -626,7 +642,14 @@ class CaptionsAdd(BaseModel):
                         {"text": "第二句字幕", "start": 2500000, "end": 5000000}
                     ],
                     "font_size": 5,
-                    "text_color": "#FFFFFF"
+                    "text_color": "#FFFFFF",
+                    "text_gradient": {
+                        "colors": ["#FFBF17", "#2D5094"],
+                        "alphas": [1, 1],
+                        "percents": [0.949115, 0.283923],
+                        "angle": 0,
+                        "mode": "all"
+                    }
                 }
             ]
         }
@@ -636,6 +659,15 @@ class CaptionsAdd(BaseModel):
     font: Optional[str] = Field(None, description="字体名称")
     font_size: float = Field(5.0, description="字体大小")
     text_color: str = Field("#FFFFFF", description="文字颜色")
+    text_gradient: Optional[Dict[str, Any]] = Field(
+        None,
+        description=(
+            "文字渐变填充设置，优先于 text_color。"
+            "示例: {\"colors\":[\"#FFBF17\",\"#2D5094\"],"
+            "\"alphas\":[1,1],\"percents\":[0.949115,0.283923],"
+            "\"angle\":0,\"mode\":\"all\"}"
+        ),
+    )
     alpha: float = Field(1.0, description="不透明度")
     bold: bool = Field(False, description="加粗")
     italic: bool = Field(False, description="斜体")

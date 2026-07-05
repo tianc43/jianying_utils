@@ -2931,6 +2931,13 @@
             "description": "文字颜色",
             "default": "#FFFFFF"
           },
+          "text_gradient": {
+            "additionalProperties": true,
+            "type": "object",
+            "nullable": true,
+            "title": "Text Gradient",
+            "description": "文字渐变填充设置，优先于 text_color。示例: {\"colors\":[\"#FFBF17\",\"#2D5094\"],\"alphas\":[1,1],\"percents\":[0.949115,0.283923],\"angle\":0,\"mode\":\"all\"}"
+          },
           "alpha": {
             "type": "number",
             "title": "Alpha",
@@ -3045,7 +3052,23 @@
             }
           ],
           "font_size": 5,
-          "text_color": "#FFFFFF"
+          "text_color": "#FFFFFF",
+          "text_gradient": {
+            "alphas": [
+              1,
+              1
+            ],
+            "angle": 0,
+            "colors": [
+              "#FFBF17",
+              "#2D5094"
+            ],
+            "mode": "all",
+            "percents": [
+              0.949115,
+              0.283923
+            ]
+          }
         }
       },
       "DraftCreate": {
@@ -4644,6 +4667,13 @@
             "description": "文字颜色 #RRGGBB",
             "default": "#FFFFFF"
           },
+          "text_gradient": {
+            "additionalProperties": true,
+            "type": "object",
+            "nullable": true,
+            "title": "Text Gradient",
+            "description": "文字渐变填充设置，优先于 text_color。示例: {\"colors\":[\"#FFBF17\",\"#2D5094\"],\"alphas\":[1,1],\"percents\":[0.949115,0.283923],\"angle\":0,\"mode\":\"all\"}"
+          },
           "alpha": {
             "type": "number",
             "title": "Alpha",
@@ -4739,7 +4769,23 @@
           "font_size": 10,
           "start": "0s",
           "text": "标题文本",
-          "text_color": "#FFFFFF"
+          "text_color": "#FFFFFF",
+          "text_gradient": {
+            "alphas": [
+              1,
+              1
+            ],
+            "angle": 0,
+            "colors": [
+              "#FFBF17",
+              "#2D5094"
+            ],
+            "mode": "all",
+            "percents": [
+              0.949115,
+              0.283923
+            ]
+          }
         }
       },
       "TimeFormat": {
