@@ -2265,6 +2265,28 @@
         }
       }
     },
+    "/material/sound-effects": {
+      "get": {
+        "tags": [
+          "素材"
+        ],
+        "summary": "查询后端内置音效列表",
+        "description": "List audio files under assets/sound_effect for workflow sound prompts.",
+        "operationId": "material_sound_effects",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoundEffectListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/material/images": {
       "post": {
         "tags": [
@@ -4214,6 +4236,106 @@
           }
         },
         "additionalProperties": false
+      },
+      "SoundEffectItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "音效展示名称（不含扩展名）",
+            "default": ""
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "音效文件名",
+            "default": ""
+          },
+          "relative_path": {
+            "type": "string",
+            "title": "Relative Path",
+            "description": "相对项目根目录的路径",
+            "default": ""
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path",
+            "description": "服务端本地文件路径",
+            "default": ""
+          },
+          "static_url": {
+            "type": "string",
+            "title": "Static Url",
+            "description": "可直接作为素材路径使用的静态 URL",
+            "default": ""
+          },
+          "audio_path": {
+            "type": "string",
+            "title": "Audio Path",
+            "description": "推荐传给音频接口的音频路径",
+            "default": ""
+          },
+          "media_type": {
+            "type": "string",
+            "title": "Media Type",
+            "description": "音频 MIME 类型",
+            "default": ""
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size",
+            "description": "音频字节数",
+            "default": 0
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256",
+            "description": "音频内容 SHA256",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "SoundEffectItem"
+      },
+      "SoundEffectListResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果消息",
+            "default": ""
+          },
+          "sound_effects": {
+            "items": {
+              "$ref": "#/components/schemas/SoundEffectItem"
+            },
+            "type": "array",
+            "title": "Sound Effects",
+            "description": "音效文件列表"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SoundEffectItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "音效文件列表别名"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "音效文件数量",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SoundEffectListResponse"
       },
       "StickerAdd": {
         "properties": {

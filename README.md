@@ -160,6 +160,7 @@ export JIANYING_LOG_LEVEL=DEBUG
 | | `GET /metadata/audio-effects` | 音频特效列表 |
 | **素材** | `GET /material/video-info` | 获取视频信息 |
 | | `GET /material/audio-duration` | 获取音频时长 |
+| | `GET /material/sound-effects` | 查询内置音效文件列表 |
 | | `POST /material/images` | 保存 Base64 图片并返回下载 URL |
 | | `POST /material/images/generate` | 调用图片接口、保存图片并返回短 URL |
 | **工具** | `POST /util/time/parse` | 解析时间 |

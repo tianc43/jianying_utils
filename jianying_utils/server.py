@@ -158,6 +158,18 @@ os.makedirs(_IMAGE_DIR, exist_ok=True)
 _IMAGE_CHUNK_DIR = os.environ.get("JIANYING_IMAGE_CHUNK_DIR", os.path.join(_IMAGE_DIR, "_chunks"))
 os.makedirs(_IMAGE_CHUNK_DIR, exist_ok=True)
 
+_SOUND_EFFECT_DIR = os.environ.get("JIANYING_SOUND_EFFECT_DIR", str(_PROJECT_ROOT / "assets" / "sound_effect"))
+_SOUND_EFFECT_EXTS = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".opus", ".flac"}
+_AUDIO_MEDIA_TYPES = {
+    ".aac": "audio/aac",
+    ".flac": "audio/flac",
+    ".m4a": "audio/mp4",
+    ".mp3": "audio/mpeg",
+    ".ogg": "audio/ogg",
+    ".opus": "audio/opus",
+    ".wav": "audio/wav",
+}
+
 # 草稿注册表文件（多 worker 共享，通过文件系统同步）
 _REGISTRY_FILE = os.path.join(DRAFTS_DIR, "_draft_registry.json")
 
@@ -240,7 +252,26 @@ def _project_static_url(path: str) -> str:
         relative = Path(path).resolve().relative_to(_PROJECT_ROOT.resolve()).as_posix()
     except ValueError:
         return ""
-    return f"{DEPLOY_URL}/static/{relative}"
+    return f"{DEPLOY_URL}/static/{urllib.parse.quote(relative, safe='/')}"
+
+def _sound_effect_item(file_path: Path) -> dict:
+    digest = hashlib.sha256(file_path.read_bytes()).hexdigest()
+    static_url = _project_static_url(str(file_path))
+    try:
+        relative_path = file_path.resolve().relative_to(_PROJECT_ROOT.resolve()).as_posix()
+    except ValueError:
+        relative_path = file_path.name
+    return {
+        "name": file_path.stem,
+        "filename": file_path.name,
+        "relative_path": relative_path,
+        "file_path": str(file_path.resolve()),
+        "static_url": static_url,
+        "audio_path": static_url,
+        "media_type": _AUDIO_MEDIA_TYPES.get(file_path.suffix.lower(), "application/octet-stream"),
+        "size": file_path.stat().st_size,
+        "sha256": digest,
+    }
 
 def _save_image_bytes(data: bytes, filename_hint: Optional[str] = None) -> dict:
     ext, media_type = _detect_image(data)
@@ -857,6 +888,24 @@ class ImageSaveResponse(BaseModel):
     media_type: str = Field("", description="图片 MIME 类型")
     size: int = Field(0, description="图片字节数")
     sha256: str = Field("", description="图片内容 SHA256")
+
+class SoundEffectItem(BaseModel):
+    name: str = Field("", description="音效展示名称（不含扩展名）")
+    filename: str = Field("", description="音效文件名")
+    relative_path: str = Field("", description="相对项目根目录的路径")
+    file_path: str = Field("", description="服务端本地文件路径")
+    static_url: str = Field("", description="可直接作为素材路径使用的静态 URL")
+    audio_path: str = Field("", description="推荐传给音频接口的音频路径")
+    media_type: str = Field("", description="音频 MIME 类型")
+    size: int = Field(0, description="音频字节数")
+    sha256: str = Field("", description="音频内容 SHA256")
+
+class SoundEffectListResponse(BaseModel):
+    success: bool = Field(True, description="操作是否成功")
+    message: str = Field("", description="操作结果消息")
+    sound_effects: List[SoundEffectItem] = Field(default_factory=list, description="音效文件列表")
+    items: List[SoundEffectItem] = Field(default_factory=list, description="音效文件列表别名")
+    count: int = Field(0, description="音效文件数量")
 
 class ImageGenerateResponse(ImageSaveResponse):
     image_url: str = Field("", description="推荐传给剪映后续素材接口的图片 URL")
@@ -1532,6 +1581,20 @@ def material_video_info(path: str):
 def material_audio_duration(path: str):
     """获取音频文件的时长"""
     return MaterialTool.get_audio_duration(path)
+
+@app.get("/material/sound-effects", tags=["素材"], summary="查询后端内置音效列表", response_model=SoundEffectListResponse)
+def material_sound_effects():
+    """List audio files under assets/sound_effect for workflow sound prompts."""
+    root = Path(_SOUND_EFFECT_DIR)
+    if not root.is_dir():
+        return _ok(message=f"音效目录不存在: {_SOUND_EFFECT_DIR}", sound_effects=[], items=[], count=0)
+
+    files = sorted(
+        (p for p in root.iterdir() if p.is_file() and p.suffix.lower() in _SOUND_EFFECT_EXTS),
+        key=lambda p: p.name.lower(),
+    )
+    sound_effects = [_sound_effect_item(path) for path in files]
+    return _ok(message=f"找到 {len(sound_effects)} 个音效", sound_effects=sound_effects, items=sound_effects, count=len(sound_effects))
 
 @app.post("/material/images", tags=["素材"], summary="保存 Base64 图片素材", response_model=ImageSaveResponse)
 def material_save_image(body: ImageB64SaveRequest):
