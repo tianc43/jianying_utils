@@ -52,7 +52,7 @@ class AudioTool:
         audio_path = _resolve_audio_path(audio_path)
 
         start_us = _parse_time(start)
-        duration_us = _parse_time(duration) if duration is not None else None
+        duration_us = _parse_optional_time(duration)
 
         material = AudioMaterial(audio_path)
 
@@ -69,9 +69,11 @@ class AudioTool:
         target_tr = Timerange(start_us, duration_us)
 
         source_tr = None
-        if source_timerange_start is not None or source_timerange_duration is not None:
-            src_start = _parse_time(source_timerange_start) if source_timerange_start else 0
-            src_dur = _parse_time(source_timerange_duration) if source_timerange_duration else material.duration
+        source_start_us = _parse_optional_time(source_timerange_start)
+        source_duration_us = _parse_optional_time(source_timerange_duration)
+        if source_start_us is not None or source_duration_us is not None:
+            src_start = source_start_us if source_start_us is not None else 0
+            src_dur = source_duration_us if source_duration_us is not None else material.duration
             source_tr = Timerange(src_start, src_dur)
 
         segment = AudioSegment(
@@ -209,6 +211,12 @@ def _parse_time(value):
         return None
     from .time_tool import parse_time_value
     return parse_time_value(value)
+
+
+def _parse_optional_time(value):
+    if isinstance(value, str) and not value.strip():
+        return None
+    return _parse_time(value)
 
 
 def _find_segment_by_id(script, segment_id):
