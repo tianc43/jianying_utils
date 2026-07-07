@@ -163,6 +163,9 @@ export JIANYING_LOG_LEVEL=DEBUG
 | | `GET /material/sound-effects` | 查询内置音效文件列表 |
 | | `POST /material/images` | 保存 Base64 图片并返回下载 URL |
 | | `POST /material/images/generate` | 调用图片接口、保存图片并返回短 URL |
+| | `POST /material/images/generate/jobs` | 异步提交图片生成任务 |
+| | `GET /material/images/generate/jobs/{job_id}` | 查询异步图片生成任务 |
+| | `POST /material/images/generate/jobs/wait` | Dify 友好的提交并短轮询接口 |
 | **工具** | `POST /util/time/parse` | 解析时间 |
 | | `POST /util/time/format` | 格式化时间 |
 | | `POST /util/tts` | 文本转语音（Edge-TTS） |
@@ -214,6 +217,48 @@ Content-Type: application/json
 ```
 
 后续 `POST /drafts/{id}/videos` 的 `video_path` 优先使用响应里的 `image_url` 或 `static_url`。如果上游返回 401/403/422，服务日志会保留上游错误体和 request id，方便判断是 key、模型、额度还是内容策略问题。
+
+### Dify 异步生成图片素材
+
+当上游图片生成耗时较长时，推荐让 Dify 调用异步任务接口，避免单个 HTTP 连接持续 100~300 秒后被代理或客户端断开。
+
+纯异步流程：
+
+```http
+POST /material/images/generate/jobs
+Content-Type: application/json
+
+{
+  "endpoint_url": "https://tianc43.xyz/v1/images/generations",
+  "api_key": "{{ IMAGE_API_KEY }}",
+  "model": "gpt-image-2",
+  "prompt": "{{ storyboard_prompt }}",
+  "response_format": "b64_json",
+  "quality": "low",
+  "size": "1024x576",
+  "output_format": "webp",
+  "output_compression": 70,
+  "timeout_seconds": 900,
+  "max_retries": 2,
+  "client_job_key": "{{ sys.workflow_run_id }}-{{ storyboard_prompt }}"
+}
+```
+
+响应会立即返回 `job_id` 和 `queued/running` 状态。随后用：
+
+```http
+GET /material/images/generate/jobs/{job_id}
+```
+
+查询状态；`succeeded` 时读取 `result.image_url`。
+
+Dify HTTP 节点可以直接使用兼容端点：
+
+```http
+POST /material/images/generate/jobs/wait
+```
+
+请求体与 `/material/images/generate` 基本一致。任务未完成时接口返回可重试状态码（默认 425），让 Dify HTTP 节点通过 retry 进行短轮询；任务完成后返回与同步接口兼容的 `image_url/static_url/download_url` 字段。
 
 ## Dify 保存 b64_json 图片素材
 

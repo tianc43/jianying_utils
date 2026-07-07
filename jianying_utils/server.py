@@ -17,10 +17,12 @@ import base64
 import binascii
 import hashlib
 import socket
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
 from http.client import IncompleteRead
+from concurrent.futures import ThreadPoolExecutor
 import time
 import tempfile
 from typing import Optional, Dict, Any, List, Union
@@ -157,6 +159,12 @@ _IMAGE_UPSTREAM_MAX_BODY_BYTES = int(os.environ.get(
 os.makedirs(_IMAGE_DIR, exist_ok=True)
 _IMAGE_CHUNK_DIR = os.environ.get("JIANYING_IMAGE_CHUNK_DIR", os.path.join(_IMAGE_DIR, "_chunks"))
 os.makedirs(_IMAGE_CHUNK_DIR, exist_ok=True)
+_IMAGE_JOB_DIR = os.environ.get("JIANYING_IMAGE_JOB_DIR", os.path.join(_IMAGE_DIR, "_jobs"))
+os.makedirs(_IMAGE_JOB_DIR, exist_ok=True)
+_IMAGE_JOB_WORKERS = max(1, min(int(os.environ.get("JIANYING_IMAGE_JOB_WORKERS", "2")), 16))
+_IMAGE_JOB_POLL_STATUS = int(os.environ.get("JIANYING_IMAGE_JOB_POLL_STATUS", "425"))
+_image_job_executor = ThreadPoolExecutor(max_workers=_IMAGE_JOB_WORKERS, thread_name_prefix="image-job")
+_image_job_lock = threading.Lock()
 
 _SOUND_EFFECT_DIR = os.environ.get("JIANYING_SOUND_EFFECT_DIR", str(_PROJECT_ROOT / "assets" / "sound_effect"))
 _SOUND_EFFECT_EXTS = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".opus", ".flac"}
@@ -300,6 +308,139 @@ def _save_image_bytes(data: bytes, filename_hint: Optional[str] = None) -> dict:
         size=len(data),
         sha256=digest,
     )
+
+def _json_safe(value):
+    if isinstance(value, BaseModel):
+        return value.model_dump()
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(v) for v in value]
+    return value
+
+def _utc_timestamp() -> float:
+    return time.time()
+
+def _image_job_path(job_id: str) -> Path:
+    safe_id = re.sub(r"[^A-Za-z0-9_.-]+", "-", str(job_id or "")).strip(".-_")
+    if not safe_id:
+        raise HTTPException(400, "job_id 不能为空")
+    return Path(_IMAGE_JOB_DIR) / f"{safe_id}.json"
+
+def _image_job_index_path(client_job_key: str) -> Path:
+    digest = hashlib.sha256(str(client_job_key).encode("utf-8")).hexdigest()
+    return Path(_IMAGE_JOB_DIR) / f"index-{digest}.json"
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + f".{os.getpid()}.{threading.get_ident()}.tmp")
+    tmp.write_text(_json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tmp, path)
+
+def _read_json_file(path: Path) -> dict:
+    try:
+        return _json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise HTTPException(404, f"图片生成任务不存在: {path.stem}") from None
+    except _json.JSONDecodeError as exc:
+        raise HTTPException(500, f"图片生成任务状态文件损坏: {path.name}") from exc
+
+def _redact_image_request(body: "ImageGenerateRequest") -> dict:
+    data = _json_safe(body)
+    if data.get("api_key"):
+        data["api_key"] = "***REDACTED***"
+    headers = data.get("headers")
+    if isinstance(headers, dict):
+        for key in list(headers):
+            if str(key).lower() in {"authorization", "x-api-key", "api-key"}:
+                headers[key] = "***REDACTED***"
+    return data
+
+def _default_image_client_job_key(body: "ImageGenerateRequest") -> str:
+    data = _json_safe(body)
+    data.pop("client_job_key", None)
+    data.pop("wait_timeout_seconds", None)
+    if data.get("api_key"):
+        data["api_key_sha256"] = hashlib.sha256(str(data.pop("api_key")).encode("utf-8")).hexdigest()
+    return hashlib.sha256(_json.dumps(data, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+def _new_image_job(body: "ImageGenerateRequest", client_job_key: Optional[str] = None) -> dict:
+    now = _utc_timestamp()
+    job_id = uuid.uuid4().hex
+    job = {
+        "success": True,
+        "job_id": job_id,
+        "status": "queued",
+        "message": "图片生成任务已提交",
+        "created_at": now,
+        "updated_at": now,
+        "started_at": None,
+        "finished_at": None,
+        "client_job_key": client_job_key or "",
+        "request": _redact_image_request(body),
+        "result": None,
+        "error": "",
+    }
+    _atomic_write_json(_image_job_path(job_id), job)
+    return job
+
+def _write_image_job(job: dict) -> None:
+    job["updated_at"] = _utc_timestamp()
+    _atomic_write_json(_image_job_path(str(job["job_id"])), job)
+
+def _read_image_job(job_id: str) -> dict:
+    return _read_json_file(_image_job_path(job_id))
+
+def _image_job_to_response(job: dict) -> dict:
+    payload = dict(job)
+    payload.pop("request", None)
+    return payload
+
+def _run_image_job(job_id: str, body: "ImageGenerateRequest") -> None:
+    job = _read_image_job(job_id)
+    job.update(status="running", message="图片生成任务运行中", started_at=_utc_timestamp(), error="")
+    _write_image_job(job)
+    try:
+        result = _call_image_generation(body)
+        job = _read_image_job(job_id)
+        job.update(
+            status="succeeded",
+            message="图片生成任务已完成",
+            finished_at=_utc_timestamp(),
+            result=result,
+            error="",
+        )
+        _write_image_job(job)
+        logger.info("图片生成任务完成: job_id=%s filename=%s", job_id, result.get("filename"))
+    except HTTPException as exc:
+        detail = exc.detail if isinstance(exc.detail, str) else _json.dumps(exc.detail, ensure_ascii=False)
+        job = _read_image_job(job_id)
+        job.update(status="failed", message="图片生成任务失败", finished_at=_utc_timestamp(), error=detail)
+        _write_image_job(job)
+        logger.warning("图片生成任务失败: job_id=%s status=%s error=%s", job_id, exc.status_code, detail)
+    except Exception as exc:
+        job = _read_image_job(job_id)
+        job.update(status="failed", message="图片生成任务异常", finished_at=_utc_timestamp(), error=str(exc))
+        _write_image_job(job)
+        logger.exception("图片生成任务异常: job_id=%s", job_id)
+
+def _submit_image_job(body: "ImageGenerateRequest", client_job_key: Optional[str] = None) -> dict:
+    with _image_job_lock:
+        if client_job_key:
+            index_path = _image_job_index_path(client_job_key)
+            if index_path.exists():
+                try:
+                    indexed = _read_json_file(index_path)
+                    job_id = indexed.get("job_id")
+                    if job_id:
+                        return _read_image_job(str(job_id))
+                except HTTPException:
+                    pass
+        job = _new_image_job(body, client_job_key)
+        if client_job_key:
+            _atomic_write_json(_image_job_index_path(client_job_key), {"job_id": job["job_id"]})
+        _image_job_executor.submit(_run_image_job, job["job_id"], body)
+        return job
 
 def _ensure_http_url(url: str, label: str = "url") -> str:
     value = (url or "").strip()
@@ -893,6 +1034,19 @@ class ImageGenerateRequest(BaseModel):
     headers: Optional[Dict[str, str]] = Field(None, description="额外上游请求头")
     extra_body: Optional[Dict[str, Any]] = Field(None, description="透传给上游的额外 JSON 字段")
 
+class ImageGenerateJobRequest(ImageGenerateRequest):
+    client_job_key: Optional[str] = Field(None, description="客户端幂等键；相同键会复用已有任务")
+
+class ImageGenerateJobWaitRequest(ImageGenerateRequest):
+    client_job_key: Optional[str] = Field(None, description="客户端幂等键；为空时按请求体生成稳定键")
+    wait_timeout_seconds: int = Field(0, ge=0, le=10, description="本次请求最多等待秒数；建议 Dify 使用 0 并依赖 HTTP 节点重试轮询")
+
+class ImageGenerateBatchJobRequest(BaseModel):
+    items: List[ImageGenerateJobRequest] = Field(default_factory=list, description="图片生成任务请求列表")
+
+class ImageGenerateJobCollectRequest(BaseModel):
+    job_ids: List[str] = Field(default_factory=list, description="要查询的任务 ID 列表")
+
 class TTSVoiceItem(BaseModel):
     ShortName: str = Field(..., description="发音人标识")
     DisplayName: str = Field(..., description="显示名称")
@@ -943,6 +1097,29 @@ class ImageGenerateResponse(ImageSaveResponse):
     image_url: str = Field("", description="推荐传给剪映后续素材接口的图片 URL")
     upstream_status: int = Field(0, description="上游图片接口 HTTP 状态码")
     upstream_request_id: str = Field("", description="上游响应 request id（如果有）")
+
+class ImageGenerateJobResponse(BaseModel):
+    success: bool = Field(True, description="请求是否成功")
+    job_id: str = Field("", description="图片生成任务 ID")
+    status: str = Field("", description="任务状态: queued/running/succeeded/failed")
+    message: str = Field("", description="任务状态说明")
+    created_at: float = Field(0.0, description="任务创建时间戳")
+    updated_at: float = Field(0.0, description="任务更新时间戳")
+    started_at: Optional[float] = Field(None, description="任务开始时间戳")
+    finished_at: Optional[float] = Field(None, description="任务结束时间戳")
+    client_job_key: str = Field("", description="客户端幂等键")
+    result: Optional[ImageGenerateResponse] = Field(None, description="成功后的图片结果")
+    error: str = Field("", description="失败原因")
+
+class ImageGenerateBatchJobResponse(BaseModel):
+    success: bool = Field(True, description="请求是否成功")
+    message: str = Field("", description="操作结果消息")
+    jobs: List[ImageGenerateJobResponse] = Field(default_factory=list, description="任务列表")
+    count: int = Field(0, description="任务数量")
+
+class ImageGenerateJobWaitResponse(ImageGenerateResponse):
+    job_id: str = Field("", description="图片生成任务 ID")
+    status: str = Field("succeeded", description="任务状态")
 
 class TTSVoicesResponse(BaseModel):
     success: bool = Field(True, description="操作是否成功")
@@ -1638,6 +1815,65 @@ def material_save_image(body: ImageB64SaveRequest):
 def material_generate_image(body: ImageGenerateRequest):
     """Call an OpenAI-compatible image API server-side, save the image, and return short URLs."""
     return _call_image_generation(body)
+
+@app.post("/material/images/generate/jobs", tags=["素材"], summary="提交异步图片生成任务", response_model=ImageGenerateJobResponse)
+def material_generate_image_job(body: ImageGenerateJobRequest):
+    """Submit an image generation job and return immediately."""
+    job = _submit_image_job(body, body.client_job_key)
+    return _image_job_to_response(job)
+
+@app.post("/material/images/generate/jobs/batch", tags=["素材"], summary="批量提交异步图片生成任务", response_model=ImageGenerateBatchJobResponse)
+def material_generate_image_jobs_batch(body: ImageGenerateBatchJobRequest):
+    """Submit multiple image generation jobs and return their job ids immediately."""
+    jobs = [_image_job_to_response(_submit_image_job(item, item.client_job_key)) for item in body.items]
+    return _ok(message=f"已提交 {len(jobs)} 个图片生成任务", jobs=jobs, count=len(jobs))
+
+@app.get("/material/images/generate/jobs/{job_id}", tags=["素材"], summary="查询异步图片生成任务", response_model=ImageGenerateJobResponse)
+def material_get_image_job(job_id: str):
+    """Return the current status for an async image generation job."""
+    return _image_job_to_response(_read_image_job(job_id))
+
+@app.post("/material/images/generate/jobs/collect", tags=["素材"], summary="批量查询异步图片生成任务", response_model=ImageGenerateBatchJobResponse)
+def material_collect_image_jobs(body: ImageGenerateJobCollectRequest):
+    """Return the current status for multiple async image generation jobs."""
+    jobs = [_image_job_to_response(_read_image_job(job_id)) for job_id in body.job_ids]
+    return _ok(message=f"查询到 {len(jobs)} 个图片生成任务", jobs=jobs, count=len(jobs))
+
+@app.post("/material/images/generate/jobs/wait", tags=["素材"], summary="提交并短轮询异步图片生成任务", response_model=ImageGenerateJobWaitResponse)
+def material_generate_image_job_wait(body: ImageGenerateJobWaitRequest):
+    """Dify-friendly short polling endpoint.
+
+    The endpoint creates or reuses a deterministic job, then returns the image
+    result once complete. While queued/running it raises a retryable status code,
+    allowing a Dify HTTP node with retry enabled to poll through short requests.
+    """
+    client_job_key = body.client_job_key or _default_image_client_job_key(body)
+    deadline = time.monotonic() + max(0, min(body.wait_timeout_seconds, 10))
+    job = _submit_image_job(body, client_job_key)
+
+    while True:
+        status = job.get("status")
+        if status == "succeeded":
+            result = dict(job.get("result") or {})
+            result.update(job_id=job.get("job_id", ""), status=status)
+            return result
+        if status == "failed":
+            raise HTTPException(502, {
+                "success": False,
+                "job_id": job.get("job_id", ""),
+                "status": status,
+                "message": job.get("message") or "图片生成任务失败",
+                "error": job.get("error") or "图片生成任务失败",
+            })
+        if time.monotonic() >= deadline:
+            raise HTTPException(_IMAGE_JOB_POLL_STATUS, {
+                "success": False,
+                "job_id": job.get("job_id", ""),
+                "status": status,
+                "message": job.get("message") or "图片生成任务未完成",
+            })
+        time.sleep(0.5)
+        job = _read_image_job(str(job["job_id"]))
 
 @app.post("/material/images/chunks", tags=["素材"], summary="分片保存 Base64 图片素材")
 def material_save_image_chunk(body: ImageB64ChunkSaveRequest):

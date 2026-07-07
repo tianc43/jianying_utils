@@ -279,6 +279,49 @@ RESPONSE_SCHEMAS = {
         },
         "additionalProperties": False
     },
+    "ImageGenerateJobResponse": {
+        "type": "object",
+        "properties": {
+            "success": {"type": "boolean", "description": "请求是否成功"},
+            "job_id": {"type": "string", "description": "图片生成任务 ID"},
+            "status": {"type": "string", "description": "任务状态: queued/running/succeeded/failed"},
+            "message": {"type": "string", "description": "任务状态说明"},
+            "created_at": {"type": "number", "description": "任务创建时间戳"},
+            "updated_at": {"type": "number", "description": "任务更新时间戳"},
+            "started_at": {"type": "number", "nullable": True, "description": "任务开始时间戳"},
+            "finished_at": {"type": "number", "nullable": True, "description": "任务结束时间戳"},
+            "client_job_key": {"type": "string", "description": "客户端幂等键"},
+            "result": {"$ref": "#/components/schemas/ImageGenerateResponse", "nullable": True},
+            "error": {"type": "string", "description": "失败原因"}
+        },
+        "additionalProperties": False
+    },
+    "ImageGenerateBatchJobResponse": {
+        "type": "object",
+        "properties": {
+            "success": {"type": "boolean", "description": "请求是否成功"},
+            "message": {"type": "string", "description": "操作结果消息"},
+            "jobs": {
+                "type": "array",
+                "items": {"$ref": "#/components/schemas/ImageGenerateJobResponse"},
+                "description": "任务列表"
+            },
+            "count": {"type": "integer", "description": "任务数量"}
+        },
+        "additionalProperties": False
+    },
+    "ImageGenerateJobWaitResponse": {
+        "allOf": [
+            {"$ref": "#/components/schemas/ImageGenerateResponse"},
+            {
+                "type": "object",
+                "properties": {
+                    "job_id": {"type": "string", "description": "图片生成任务 ID"},
+                    "status": {"type": "string", "description": "任务状态"}
+                }
+            }
+        ]
+    },
     "MetadataListResponse": {
         "type": "object",
         "properties": {
@@ -348,6 +391,11 @@ PATH_RESPONSE_MAP = {
     ("/material/audio-duration", "get"): "MaterialAudioDurationResponse",
     ("/material/images", "post"): "ImageSaveResponse",
     ("/material/images/generate", "post"): "ImageGenerateResponse",
+    ("/material/images/generate/jobs", "post"): "ImageGenerateJobResponse",
+    ("/material/images/generate/jobs/batch", "post"): "ImageGenerateBatchJobResponse",
+    ("/material/images/generate/jobs/{job_id}", "get"): "ImageGenerateJobResponse",
+    ("/material/images/generate/jobs/collect", "post"): "ImageGenerateBatchJobResponse",
+    ("/material/images/generate/jobs/wait", "post"): "ImageGenerateJobWaitResponse",
     ("/util/time/parse", "post"): "TimeParseResponse",
     ("/util/time/format", "post"): "TimeFormatResponse",
 }
@@ -546,6 +594,9 @@ def _describe_schema(name: str) -> str:
         "MaterialAudioDurationResponse": "音频时长信息",
         "ImageSaveResponse": "图片保存结果",
         "ImageGenerateResponse": "图片生成保存结果",
+        "ImageGenerateJobResponse": "图片生成任务状态",
+        "ImageGenerateBatchJobResponse": "图片生成任务列表",
+        "ImageGenerateJobWaitResponse": "图片生成任务完成结果",
         "MetadataListResponse": "元数据查询结果",
     }
     return descriptions.get(name, "Successful Response")

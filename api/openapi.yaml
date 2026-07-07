@@ -1555,6 +1555,145 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /material/images/generate/jobs:
+    post:
+      tags:
+      - 素材
+      summary: 提交异步图片生成任务
+      description: Submit an image generation job and return immediately.
+      operationId: material_generate_image_job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageGenerateJobRequest'
+        required: true
+      responses:
+        '200':
+          description: 图片生成任务状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageGenerateJobResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /material/images/generate/jobs/batch:
+    post:
+      tags:
+      - 素材
+      summary: 批量提交异步图片生成任务
+      description: Submit multiple image generation jobs and return their job ids
+        immediately.
+      operationId: material_generate_image_jobs_batch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageGenerateBatchJobRequest'
+        required: true
+      responses:
+        '200':
+          description: 图片生成任务列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageGenerateBatchJobResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /material/images/generate/jobs/{job_id}:
+    get:
+      tags:
+      - 素材
+      summary: 查询异步图片生成任务
+      description: Return the current status for an async image generation job.
+      operationId: material_get_image_job
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      responses:
+        '200':
+          description: 图片生成任务状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageGenerateJobResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /material/images/generate/jobs/collect:
+    post:
+      tags:
+      - 素材
+      summary: 批量查询异步图片生成任务
+      description: Return the current status for multiple async image generation jobs.
+      operationId: material_collect_image_jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageGenerateJobCollectRequest'
+        required: true
+      responses:
+        '200':
+          description: 图片生成任务列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageGenerateBatchJobResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /material/images/generate/jobs/wait:
+    post:
+      tags:
+      - 素材
+      summary: 提交并短轮询异步图片生成任务
+      description: 'Dify-friendly short polling endpoint.
+
+
+        The endpoint creates or reuses a deterministic job, then returns the image
+
+        result once complete. While queued/running it raises a retryable status code,
+
+        allowing a Dify HTTP node with retry enabled to poll through short requests.'
+      operationId: material_generate_image_job_wait
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageGenerateJobWaitRequest'
+        required: true
+      responses:
+        '200':
+          description: 图片生成任务完成结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageGenerateJobWaitResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /material/images/chunks:
     post:
       tags:
@@ -2553,6 +2692,328 @@ components:
       example:
         b64_json: iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB...
         filename: generated-cover.png
+    ImageGenerateBatchJobRequest:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ImageGenerateJobRequest'
+          type: array
+          title: Items
+          description: 图片生成任务请求列表
+      type: object
+      title: ImageGenerateBatchJobRequest
+    ImageGenerateBatchJobResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 请求是否成功
+        message:
+          type: string
+          description: 操作结果消息
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageGenerateJobResponse'
+          description: 任务列表
+        count:
+          type: integer
+          description: 任务数量
+      additionalProperties: false
+    ImageGenerateJobCollectRequest:
+      properties:
+        job_ids:
+          items:
+            type: string
+          type: array
+          title: Job Ids
+          description: 要查询的任务 ID 列表
+      type: object
+      title: ImageGenerateJobCollectRequest
+    ImageGenerateJobRequest:
+      properties:
+        endpoint_url:
+          type: string
+          title: Endpoint Url
+          description: OpenAI 兼容图片生成接口 URL，例如 https://host/v1/images/generations
+        api_key:
+          type: string
+          nullable: true
+          title: Api Key
+          description: 上游图片接口 API key
+        api_key_header:
+          type: string
+          title: Api Key Header
+          description: API key 请求头。Authorization 会自动加 Bearer，其它值如 x-api-key 会原样发送
+            key
+          default: Authorization
+        model:
+          type: string
+          title: Model
+          description: 图片模型名称
+          default: gpt-image-2
+        prompt:
+          type: string
+          title: Prompt
+          description: 图片生成提示词
+        response_format:
+          type: string
+          nullable: true
+          title: Response Format
+          description: 上游返回格式，支持 b64_json 或 url；置空则不发送
+          default: b64_json
+        quality:
+          type: string
+          nullable: true
+          title: Quality
+          description: 图片质量
+          default: low
+        size:
+          type: string
+          nullable: true
+          title: Size
+          description: 图片尺寸
+          default: 1024x576
+        output_format:
+          type: string
+          nullable: true
+          title: Output Format
+          description: 输出格式
+          default: webp
+        output_compression:
+          type: integer
+          nullable: true
+          title: Output Compression
+          description: 输出压缩质量
+          default: 70
+        n:
+          type: integer
+          nullable: true
+          title: N
+          description: 生成数量；本端点只保存第一张
+        filename:
+          type: string
+          nullable: true
+          title: Filename
+          description: 期望文件名；服务端会清理路径并按真实图片类型修正扩展名
+        timeout_seconds:
+          type: integer
+          title: Timeout Seconds
+          description: 单次上游请求超时秒数，最大 3600
+          default: 900
+          example: 5.0
+        max_retries:
+          type: integer
+          title: Max Retries
+          description: 上游网络失败重试次数，最大 5
+          default: 2
+        headers:
+          additionalProperties:
+            type: string
+          type: object
+          nullable: true
+          title: Headers
+          description: 额外上游请求头
+        extra_body:
+          additionalProperties: true
+          type: object
+          nullable: true
+          title: Extra Body
+          description: 透传给上游的额外 JSON 字段
+        client_job_key:
+          type: string
+          nullable: true
+          title: Client Job Key
+          description: 客户端幂等键；相同键会复用已有任务
+      type: object
+      required:
+      - endpoint_url
+      - prompt
+      title: ImageGenerateJobRequest
+      example:
+        api_key: sk-...
+        endpoint_url: https://example.com/v1/images/generations
+        filename: storyboard-01
+        max_retries: 2
+        model: gpt-image-2
+        output_compression: 70
+        output_format: webp
+        prompt: 手绘插画风格的心理学短视频分镜
+        quality: low
+        response_format: b64_json
+        size: 1024x576
+        timeout_seconds: 900
+    ImageGenerateJobResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 请求是否成功
+        job_id:
+          type: string
+          description: 图片生成任务 ID
+        status:
+          type: string
+          description: '任务状态: queued/running/succeeded/failed'
+        message:
+          type: string
+          description: 任务状态说明
+        created_at:
+          type: number
+          description: 任务创建时间戳
+        updated_at:
+          type: number
+          description: 任务更新时间戳
+        started_at:
+          type: number
+          nullable: true
+          description: 任务开始时间戳
+        finished_at:
+          type: number
+          nullable: true
+          description: 任务结束时间戳
+        client_job_key:
+          type: string
+          description: 客户端幂等键
+        result:
+          $ref: '#/components/schemas/ImageGenerateResponse'
+          nullable: true
+        error:
+          type: string
+          description: 失败原因
+      additionalProperties: false
+    ImageGenerateJobWaitRequest:
+      properties:
+        endpoint_url:
+          type: string
+          title: Endpoint Url
+          description: OpenAI 兼容图片生成接口 URL，例如 https://host/v1/images/generations
+        api_key:
+          type: string
+          nullable: true
+          title: Api Key
+          description: 上游图片接口 API key
+        api_key_header:
+          type: string
+          title: Api Key Header
+          description: API key 请求头。Authorization 会自动加 Bearer，其它值如 x-api-key 会原样发送
+            key
+          default: Authorization
+        model:
+          type: string
+          title: Model
+          description: 图片模型名称
+          default: gpt-image-2
+        prompt:
+          type: string
+          title: Prompt
+          description: 图片生成提示词
+        response_format:
+          type: string
+          nullable: true
+          title: Response Format
+          description: 上游返回格式，支持 b64_json 或 url；置空则不发送
+          default: b64_json
+        quality:
+          type: string
+          nullable: true
+          title: Quality
+          description: 图片质量
+          default: low
+        size:
+          type: string
+          nullable: true
+          title: Size
+          description: 图片尺寸
+          default: 1024x576
+        output_format:
+          type: string
+          nullable: true
+          title: Output Format
+          description: 输出格式
+          default: webp
+        output_compression:
+          type: integer
+          nullable: true
+          title: Output Compression
+          description: 输出压缩质量
+          default: 70
+        n:
+          type: integer
+          nullable: true
+          title: N
+          description: 生成数量；本端点只保存第一张
+        filename:
+          type: string
+          nullable: true
+          title: Filename
+          description: 期望文件名；服务端会清理路径并按真实图片类型修正扩展名
+        timeout_seconds:
+          type: integer
+          title: Timeout Seconds
+          description: 单次上游请求超时秒数，最大 3600
+          default: 900
+          example: 5.0
+        max_retries:
+          type: integer
+          title: Max Retries
+          description: 上游网络失败重试次数，最大 5
+          default: 2
+        headers:
+          additionalProperties:
+            type: string
+          type: object
+          nullable: true
+          title: Headers
+          description: 额外上游请求头
+        extra_body:
+          additionalProperties: true
+          type: object
+          nullable: true
+          title: Extra Body
+          description: 透传给上游的额外 JSON 字段
+        client_job_key:
+          type: string
+          nullable: true
+          title: Client Job Key
+          description: 客户端幂等键；为空时按请求体生成稳定键
+        wait_timeout_seconds:
+          type: integer
+          maximum: 10.0
+          minimum: 0.0
+          title: Wait Timeout Seconds
+          description: 本次请求最多等待秒数；建议 Dify 使用 0 并依赖 HTTP 节点重试轮询
+          default: 0
+          example: 5.0
+      type: object
+      required:
+      - endpoint_url
+      - prompt
+      title: ImageGenerateJobWaitRequest
+      example:
+        api_key: sk-...
+        endpoint_url: https://example.com/v1/images/generations
+        filename: storyboard-01
+        max_retries: 2
+        model: gpt-image-2
+        output_compression: 70
+        output_format: webp
+        prompt: 手绘插画风格的心理学短视频分镜
+        quality: low
+        response_format: b64_json
+        size: 1024x576
+        timeout_seconds: 900
+    ImageGenerateJobWaitResponse:
+      allOf:
+      - $ref: '#/components/schemas/ImageGenerateResponse'
+      - type: object
+        properties:
+          job_id:
+            type: string
+            description: 图片生成任务 ID
+          status:
+            type: string
+            description: 任务状态
     ImageGenerateRequest:
       properties:
         endpoint_url:
