@@ -125,10 +125,15 @@ class AudioTool:
             end = info["end"]
             duration = end - start
 
-            speed = info.get("speed", 1.0)
+            speed = float(info.get("speed", 1.0) or 1.0)
+            if speed <= 0:
+                speed = 1.0
             volume = info.get("volume", 1.0)
 
             material = AudioMaterial(audio_path)
+            max_dur = round(material.duration / speed) if speed != 1.0 else material.duration
+            if duration > max_dur:
+                duration = max_dur
             target_tr = Timerange(start, duration)
             segment = AudioSegment(material, target_tr, speed=speed, volume=volume)
             script.add_segment(segment, track_name)
