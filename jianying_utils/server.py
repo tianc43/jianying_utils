@@ -163,6 +163,12 @@ _IMAGE_JOB_DIR = os.environ.get("JIANYING_IMAGE_JOB_DIR", os.path.join(_IMAGE_DI
 os.makedirs(_IMAGE_JOB_DIR, exist_ok=True)
 _IMAGE_JOB_WORKERS = max(1, min(int(os.environ.get("JIANYING_IMAGE_JOB_WORKERS", "2")), 16))
 _IMAGE_JOB_POLL_STATUS = int(os.environ.get("JIANYING_IMAGE_JOB_POLL_STATUS", "425"))
+_IMAGE_UPSTREAM_INTERNAL_BASE_URL = os.environ.get("JIANYING_IMAGE_UPSTREAM_INTERNAL_BASE_URL", "").strip().rstrip("/")
+_IMAGE_UPSTREAM_REWRITE_HOSTS = {
+    host.strip().lower()
+    for host in os.environ.get("JIANYING_IMAGE_UPSTREAM_REWRITE_HOSTS", "").split(",")
+    if host.strip()
+}
 _image_job_executor = ThreadPoolExecutor(max_workers=_IMAGE_JOB_WORKERS, thread_name_prefix="image-job")
 _image_job_lock = threading.Lock()
 
@@ -449,6 +455,34 @@ def _ensure_http_url(url: str, label: str = "url") -> str:
         raise HTTPException(400, f"{label} 必须是 http/https URL")
     return value
 
+def _rewrite_image_endpoint_url(url: str) -> str:
+    """Optionally route public image API URLs to an internal origin.
+
+    This keeps Dify-facing workflow inputs stable while letting the remote
+    service bypass Cloudflare's 120s proxy read timeout for long image jobs.
+    """
+    value = _ensure_http_url(url, "endpoint_url")
+    if not _IMAGE_UPSTREAM_INTERNAL_BASE_URL or not _IMAGE_UPSTREAM_REWRITE_HOSTS:
+        return value
+
+    parsed = urllib.parse.urlparse(value)
+    hostname = (parsed.hostname or "").lower()
+    if hostname not in _IMAGE_UPSTREAM_REWRITE_HOSTS:
+        return value
+
+    target = urllib.parse.urlparse(_IMAGE_UPSTREAM_INTERNAL_BASE_URL)
+    if target.scheme not in {"http", "https"} or not target.netloc:
+        raise HTTPException(500, "JIANYING_IMAGE_UPSTREAM_INTERNAL_BASE_URL 必须是 http/https URL")
+
+    base_path = target.path.rstrip("/")
+    new_path = urllib.parse.urljoin(base_path + "/", (parsed.path or "").lstrip("/"))
+    rewritten = urllib.parse.urlunparse(
+        (target.scheme, target.netloc, new_path, parsed.params, parsed.query, parsed.fragment)
+    )
+    if rewritten != value:
+        logger.info("重写图片上游 endpoint_url: %s -> %s", value, rewritten)
+    return rewritten
+
 def _read_limited(response, max_bytes: int) -> bytes:
     data = response.read(max_bytes + 1)
     if len(data) > max_bytes:
@@ -472,6 +506,7 @@ def _summarize_upstream_error(status_code: int, headers: dict[str, str], body: b
 
 def _post_json(url: str, payload: dict, headers: dict[str, str], timeout_seconds: int) -> tuple[int, dict[str, str], bytes]:
     data = _json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    endpoint_url = _rewrite_image_endpoint_url(url)
     request_headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -479,7 +514,7 @@ def _post_json(url: str, payload: dict, headers: dict[str, str], timeout_seconds
         **headers,
     }
     request = urllib.request.Request(
-        _ensure_http_url(url, "endpoint_url"),
+        endpoint_url,
         data=data,
         method="POST",
         headers=request_headers,

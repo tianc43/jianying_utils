@@ -15,6 +15,8 @@ services:
       - DEPLOY_URL=https://tianc43.xyz/jianying-utils
       - WORKERS=4                            # gunicorn worker 数量
       - JIANYING_LOG_LEVEL=INFO              # 日志级别: DEBUG/INFO/WARNING/ERROR
+      - JIANYING_IMAGE_UPSTREAM_INTERNAL_BASE_URL=${JIANYING_IMAGE_UPSTREAM_INTERNAL_BASE_URL:-http://172.18.0.1:8080}  # 图片上游内网地址，绕开 Cloudflare 120s 限制
+      - JIANYING_IMAGE_UPSTREAM_REWRITE_HOSTS=${JIANYING_IMAGE_UPSTREAM_REWRITE_HOSTS:-tianc43.xyz}                    # 将这些 host 的图片 endpoint 改写到内网地址
     volumes:
       - ./data/drafts:/app/drafts            # 草稿文件 → 主机 ./data/drafts
       - ./data/uploads:/app/uploads          # 上传素材 → 主机 ./data/uploads

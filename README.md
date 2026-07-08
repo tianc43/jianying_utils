@@ -260,6 +260,15 @@ POST /material/images/generate/jobs/wait
 
 请求体与 `/material/images/generate` 基本一致。任务未完成时接口返回可重试状态码（默认 425），让 Dify HTTP 节点通过 retry 进行短轮询；任务完成后返回与同步接口兼容的 `image_url/static_url/download_url` 字段。
 
+如果 `endpoint_url` 使用 Cloudflare 代理域名，长时间图片生成可能触发 Cloudflare 524（120 秒 origin read timeout）。部署在同一台服务器时，可以让服务端自动把公开图片上游改写为内网地址，避免后台任务绕一圈公网代理：
+
+```bash
+JIANYING_IMAGE_UPSTREAM_INTERNAL_BASE_URL=http://172.18.0.1:8080
+JIANYING_IMAGE_UPSTREAM_REWRITE_HOSTS=tianc43.xyz
+```
+
+例如 Dify 仍传 `https://tianc43.xyz/v1/images/generations`，服务端实际请求会改为 `http://172.18.0.1:8080/v1/images/generations`。只会改写 host 命中的图片生成 `endpoint_url`，不会影响 Dify 调用 `jianying-utils` 本身的公开地址。
+
 ## Dify 保存 b64_json 图片素材
 
 如果上游 HTTP 节点返回 OpenAI 图片接口一类的 `b64_json`，推荐不要在 Dify 里长期传递整段 Base64。先调用后台保存成文件，再把返回的 URL 传给后续剪映接口：
