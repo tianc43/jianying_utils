@@ -23,6 +23,16 @@ class DockerRuntimeContractTests(unittest.TestCase):
         self.assertEqual(gunicorn_timeout, 300)
         self.assertGreater(gunicorn_timeout, upstream_timeout)
 
+    def test_pip_install_has_bounded_network_resilience(self) -> None:
+        dockerfile = (REPO_ROOT / "Dockerfile").read_text(encoding="utf-8")
+        pip_install = re.search(r"^RUN pip install .+$", dockerfile, re.MULTILINE)
+
+        self.assertIsNotNone(pip_install, "Dockerfile must install Python requirements")
+        self.assertEqual(
+            pip_install.group(0).rstrip("\r"),
+            "RUN pip install --no-cache-dir --timeout 180 --retries 10 -r requirements.txt",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,7 +16,7 @@ WORKDIR /app
 # 配置 pip 国内镜像
 # 安装 Python 依赖
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --timeout 180 --retries 10 -r requirements.txt
 
 # 复制项目代码（只复制需要的目录）
 COPY jianying_utils/ jianying_utils/
