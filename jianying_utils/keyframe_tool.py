@@ -4,6 +4,7 @@
 """
 
 from typing import Optional, Dict, Any, List, Union
+from uuid import uuid4
 
 from pyJianYingDraft import KeyframeProperty, AudioSegment
 
@@ -80,20 +81,20 @@ class KeyframeTool:
                 f"不支持的属性 '{property_name}'，可选: {list(_PROPERTY_MAP.keys())}"
             )
 
+        prop = _PROPERTY_MAP[property_name]
+        offset = _parse_time(time_offset)
         script = _context.load_script(folder_path, draft_name)
         segment = _find_segment(script, segment_id)
 
         if segment is None:
-            return _context.make_result(False, f"未找到片段 {segment_id}")
-
-        prop = _PROPERTY_MAP[property_name]
-
-        # 音量关键帧对 AudioSegment 使用专用方法
-        if prop == KeyframeProperty.volume and isinstance(segment, AudioSegment):
-            offset = _parse_time(time_offset)
+            if not _add_imported_keyframe(
+                script, segment_id, prop, offset, value
+            ):
+                return _context.make_result(False, f"未找到片段 {segment_id}")
+        elif prop == KeyframeProperty.volume and isinstance(segment, AudioSegment):
             segment.add_keyframe(offset, value)
         else:
-            segment.add_keyframe(prop, time_offset, value)
+            segment.add_keyframe(prop, offset, value)
 
         _context.save_script(script)
 
@@ -194,3 +195,69 @@ def _find_segment(script, segment_id):
             if seg_data.get("id") == segment_id:
                 return None  # 原始数据不可编辑
     return None
+
+
+def _raw_property_type(prop: KeyframeProperty) -> str:
+    if prop == KeyframeProperty.uniform_scale:
+        return KeyframeProperty.scale_x.value
+    return prop.value
+
+
+def _add_imported_keyframe(
+    script,
+    segment_id: str,
+    prop: KeyframeProperty,
+    time_offset: int,
+    value: float,
+) -> bool:
+    """Attach a linear keyframe to an already-saved/imported segment."""
+    seg_data = None
+    seg_obj = None
+    for imp_track in script.imported_tracks:
+        for index, item in enumerate(imp_track.raw_data.get("segments", [])):
+            if item.get("id") == segment_id:
+                seg_data = item
+                if hasattr(imp_track, "segments") and index < len(imp_track.segments):
+                    seg_obj = imp_track.segments[index]
+                break
+        if seg_data is not None:
+            break
+    if seg_data is None:
+        return False
+
+    property_type = _raw_property_type(prop)
+    containers = seg_data.setdefault("common_keyframes", [])
+    container = next(
+        (
+            item
+            for item in containers
+            if item.get("property_type") == property_type
+        ),
+        None,
+    )
+    if container is None:
+        container = {
+            "id": uuid4().hex,
+            "keyframe_list": [],
+            "material_id": "",
+            "property_type": property_type,
+        }
+        containers.append(container)
+
+    container.setdefault("keyframe_list", []).append(
+        {
+            "curveType": "Line",
+            "graphID": "",
+            "id": uuid4().hex,
+            "left_control": {"x": 0.0, "y": 0.0},
+            "right_control": {"x": 0.0, "y": 0.0},
+            "time_offset": time_offset,
+            "values": [value],
+        }
+    )
+    container["keyframe_list"].sort(
+        key=lambda item: int(item.get("time_offset") or 0)
+    )
+    if seg_obj is not None:
+        seg_obj.raw_data = seg_data
+    return True
