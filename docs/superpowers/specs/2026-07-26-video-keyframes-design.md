@@ -99,8 +99,15 @@ The batch request accepts the documented `time_offset` field. It also accepts
 the legacy implementation's `offset` field so existing callers do not regress.
 If neither field is present, that batch item is not written.
 
-Unsupported property names and unknown segment IDs keep returning a failed
-result. Existing audio-volume handling remains unchanged.
+For a single-keyframe request, an unsupported property name, unknown segment
+ID, or malformed time string returns a failed result through the existing
+error/result wrapper.
+
+For a batch request, unsupported properties, unknown segments, missing or
+malformed time values, and nonnumeric or nonfinite values are skipped per item.
+Valid neighbors are still written in time order and the successful response's
+`count` is reduced to the number actually persisted. Existing audio-volume
+handling remains unchanged.
 
 ## Validation
 

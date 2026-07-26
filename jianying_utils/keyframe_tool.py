@@ -3,6 +3,7 @@
 适用于 Dify 工作流的代码节点。
 """
 
+import math
 from typing import Optional, Dict, Any, List, Union
 from uuid import uuid4
 
@@ -142,6 +143,8 @@ class KeyframeTool:
             except (TypeError, ValueError, OverflowError):
                 continue
             value = kf["value"]
+            if not _is_finite_json_number(value):
+                continue
             prop = _PROPERTY_MAP[prop_name]
             segment = _find_segment(script, seg_id)
 
@@ -214,6 +217,30 @@ def _raw_property_type(prop: KeyframeProperty) -> str:
     return prop.value
 
 
+def _is_finite_json_number(value: Any) -> bool:
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, int):
+        return True
+    return isinstance(value, float) and math.isfinite(value)
+
+
+def _apply_imported_scale_mode(
+    seg_data: Dict[str, Any],
+    prop: KeyframeProperty,
+) -> None:
+    uniform_scale = seg_data.get("uniform_scale")
+    if not isinstance(uniform_scale, dict):
+        return
+    if prop in (KeyframeProperty.scale_x, KeyframeProperty.scale_y):
+        uniform_scale["on"] = False
+    elif (
+        prop == KeyframeProperty.uniform_scale
+        and not uniform_scale.get("on", True)
+    ):
+        raise ValueError("已设置 scale_x 或 scale_y 时, 不能再设置 uniform_scale")
+
+
 def _add_imported_keyframe(
     script,
     segment_id: str,
@@ -236,6 +263,7 @@ def _add_imported_keyframe(
     if seg_data is None:
         return False
 
+    _apply_imported_scale_mode(seg_data, prop)
     property_type = _raw_property_type(prop)
     containers = seg_data.setdefault("common_keyframes", [])
     container = next(

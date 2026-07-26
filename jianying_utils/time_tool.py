@@ -10,6 +10,15 @@ from pyJianYingDraft import tim, trange, SEC
 
 
 _NUMERIC_RE = re.compile(r"^[+-]?\d+(?:\.\d+)?$")
+_NUMBER_PART = r"\d+(?:\.\d+)?"
+_UNIT_TIME_RE = re.compile(
+    rf"^[+-]?(?:"
+    rf"{_NUMBER_PART}h(?:{_NUMBER_PART}m)?(?:{_NUMBER_PART}s)?|"
+    rf"{_NUMBER_PART}m(?:{_NUMBER_PART}s)?|"
+    rf"{_NUMBER_PART}s"
+    rf")$",
+    re.IGNORECASE,
+)
 
 
 def parse_time_value(value: Union[str, float, int]) -> int:
@@ -18,6 +27,8 @@ def parse_time_value(value: Union[str, float, int]) -> int:
         stripped = value.strip()
         if _NUMERIC_RE.fullmatch(stripped):
             return int(round(float(stripped)))
+        if not _UNIT_TIME_RE.fullmatch(stripped):
+            raise ValueError(f"不支持的时间格式: {value!r}")
         return tim(stripped)
     return int(round(value))
 
