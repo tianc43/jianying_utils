@@ -115,7 +115,8 @@ class KeyframeTool:
             keyframes: 关键帧列表，每项:
                 - segment_id (str): 片段ID（必须）
                 - property (str): 属性名称（必须）
-                - offset (int): 时间偏移量微秒（必须）
+                - time_offset (str | int): 时间偏移量（推荐，支持时间字符串或微秒）
+                - offset (int): 旧版兼容的时间偏移量微秒
                 - value (float): 属性值（必须）
 
         Returns:
@@ -136,7 +137,10 @@ class KeyframeTool:
             ):
                 continue
 
-            offset = _parse_time(offset_value)
+            try:
+                offset = _parse_time(offset_value)
+            except (TypeError, ValueError, OverflowError):
+                continue
             value = kf["value"]
             prop = _PROPERTY_MAP[prop_name]
             segment = _find_segment(script, seg_id)
