@@ -7,6 +7,16 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class DockerRuntimeContractTests(unittest.TestCase):
+    def test_fish_tts_has_persistent_mihomo_proxy_route(self) -> None:
+        compose = (REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+
+        self.assertIn("- HTTPS_PROXY=http://mihomo:7890", compose)
+        self.assertIn("- sub2api-proxy", compose)
+        self.assertRegex(
+            compose,
+            r"(?m)^  sub2api-proxy:\n    external: true\n    name: deploy_sub2api-network$",
+        )
+
     def test_gunicorn_timeout_outlasts_fish_tts_upstream(self) -> None:
         dockerfile = (REPO_ROOT / "Dockerfile").read_text(encoding="utf-8")
         tts_source = (REPO_ROOT / "jianying_utils" / "tts_tool.py").read_text(encoding="utf-8")
