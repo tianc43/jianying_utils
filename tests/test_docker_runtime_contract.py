@@ -43,6 +43,11 @@ class DockerRuntimeContractTests(unittest.TestCase):
             "RUN pip install --no-cache-dir --timeout 180 --retries 10 -r requirements.txt",
         )
 
+    def test_pyjianyingdraft_version_is_pinned_to_compatible_api(self) -> None:
+        requirements = (REPO_ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines()
+
+        self.assertIn("pyjianyingdraft==0.2.6", requirements)
+
 
 if __name__ == "__main__":
     unittest.main()
