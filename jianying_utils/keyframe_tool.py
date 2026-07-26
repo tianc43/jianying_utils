@@ -125,21 +125,28 @@ class KeyframeTool:
         count = 0
 
         for kf in keyframes:
-            seg_id = kf["segment_id"]
-            prop_name = kf["property"]
-            offset = kf["offset"]
+            seg_id = kf.get("segment_id")
+            prop_name = kf.get("property")
+            offset_value = kf.get("time_offset", kf.get("offset"))
+            if (
+                not seg_id
+                or prop_name not in _PROPERTY_MAP
+                or offset_value is None
+                or "value" not in kf
+            ):
+                continue
+
+            offset = _parse_time(offset_value)
             value = kf["value"]
-
-            if prop_name not in _PROPERTY_MAP:
-                continue
-
-            segment = _find_segment(script, seg_id)
-            if segment is None:
-                continue
-
             prop = _PROPERTY_MAP[prop_name]
+            segment = _find_segment(script, seg_id)
 
-            if prop == KeyframeProperty.volume and isinstance(segment, AudioSegment):
+            if segment is None:
+                if not _add_imported_keyframe(
+                    script, seg_id, prop, offset, value
+                ):
+                    continue
+            elif prop == KeyframeProperty.volume and isinstance(segment, AudioSegment):
                 segment.add_keyframe(offset, value)
             else:
                 segment.add_keyframe(prop, offset, value)

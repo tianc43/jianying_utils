@@ -89,6 +89,42 @@ class KeyframeToolTests(unittest.TestCase):
             self.assertEqual(item["left_control"], {"x": 0.0, "y": 0.0})
             self.assertEqual(item["right_control"], {"x": 0.0, "y": 0.0})
 
+    def test_batch_accepts_documented_and_legacy_offset_fields(self) -> None:
+        result = KeyframeTool.add_keyframes_batch(
+            str(self.root),
+            self.draft_name,
+            [
+                {
+                    "segment_id": self.segment_id,
+                    "property": "position_x",
+                    "time_offset": "1s",
+                    "value": 0.25,
+                },
+                {
+                    "segment_id": self.segment_id,
+                    "property": "position_x",
+                    "offset": 2_000_000,
+                    "value": 0.5,
+                },
+            ],
+        )
+
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["count"], 2)
+        container = next(
+            item
+            for item in self._saved_segment()["common_keyframes"]
+            if item["property_type"] == "KFTypePositionX"
+        )
+        self.assertEqual(
+            [item["time_offset"] for item in container["keyframe_list"]],
+            [1_000_000, 2_000_000],
+        )
+        self.assertEqual(
+            [item["values"] for item in container["keyframe_list"]],
+            [[0.25], [0.5]],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
