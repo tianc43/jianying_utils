@@ -34,7 +34,7 @@ from fastapi.staticfiles import StaticFiles
 import zipfile
 import io
 from fastapi.responses import Response, FileResponse, StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 import json as _json
 
 from jianying_utils import (
@@ -650,6 +650,14 @@ END_TIME_US_DESC = "结束时间，单位微秒（μs）。注意这是绝对结
 START_TIME_US_DESC = "起始时间，单位微秒（μs）。1 秒 = 1,000,000 微秒。"
 TIME_OFFSET_DESC = f"相对片段起点的时间偏移。{TIME_VALUE_DESC}"
 
+
+def _blank_optional_object_to_none(value: Any) -> Any:
+    """Treat Dify's blank optional object values as omitted."""
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
 class DraftCreate(BaseModel):
     width: int = Field(1920, description="视频宽度（像素）")
     height: int = Field(1080, description="视频高度（像素）")
@@ -703,6 +711,13 @@ class VideoAdd(BaseModel):
     background_filling: Optional[Dict[str, Any]] = Field(None, description="片段背景填充设置")
     mix_mode: Optional[str] = Field(None, description="混合模式名称")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
+
+    _normalize_blank_optional_objects = field_validator(
+        "clip_settings",
+        "mask",
+        "background_filling",
+        mode="before",
+    )(_blank_optional_object_to_none)
 
 class VideoBatch(BaseModel):
     video_infos: List[Dict[str, Any]] = Field(
@@ -808,6 +823,15 @@ class TextAdd(BaseModel):
     clip_settings: Optional[Dict[str, Any]] = Field(None, description="图像调节")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
 
+    _normalize_blank_optional_objects = field_validator(
+        "text_gradient",
+        "border",
+        "background",
+        "shadow",
+        "clip_settings",
+        mode="before",
+    )(_blank_optional_object_to_none)
+
 class CaptionsAdd(BaseModel):
     model_config = {
         "json_schema_extra": {
@@ -859,6 +883,15 @@ class CaptionsAdd(BaseModel):
     clip_settings: Optional[Dict[str, Any]] = Field(None, description="图像调节")
     track_name: Optional[str] = Field(None, description="目标轨道名称")
     has_shadow: bool = Field(False, description="启用阴影")
+
+    _normalize_blank_optional_objects = field_validator(
+        "text_gradient",
+        "border",
+        "background",
+        "shadow",
+        "clip_settings",
+        mode="before",
+    )(_blank_optional_object_to_none)
 
 class EffectAdd(BaseModel):
     model_config = {
