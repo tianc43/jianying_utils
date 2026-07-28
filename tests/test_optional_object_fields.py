@@ -2,7 +2,13 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from jianying_utils.server import CaptionsAdd, TextAdd, VideoAdd, app
+from jianying_utils.server import (
+    CaptionsAdd,
+    ImageGenerateRequest,
+    TextAdd,
+    VideoAdd,
+    app,
+)
 
 
 @pytest.mark.parametrize("blank", ["", "   ", "\t\r\n"])
@@ -59,6 +65,55 @@ def test_optional_object_dictionary_is_preserved():
     assert model.clip_settings == clip_settings
 
 
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (
+            '{"transform_x": -0.8, "transform_y": 0.87}',
+            {"transform_x": -0.8, "transform_y": 0.87},
+        ),
+        (
+            "{'transform_x': -0.8, 'transform_y': 0.87}",
+            {"transform_x": -0.8, "transform_y": 0.87},
+        ),
+    ],
+)
+def test_optional_object_accepts_dify_stringified_dictionaries(value, expected):
+    model = TextAdd(
+        text="账号角标",
+        start="0s",
+        duration="1s",
+        clip_settings=value,
+    )
+
+    assert model.clip_settings == expected
+
+
+def test_all_public_optional_object_models_use_the_same_parser():
+    video = VideoAdd(
+        video_path="https://example.com/image.png",
+        start="0s",
+        glow_outline="{'color': '#FFFFFF', 'size': 10}",
+        mask='{"type": "circle"}',
+    )
+    captions = CaptionsAdd(
+        captions=[{"text": "字幕", "start": 0, "end": 1_000_000}],
+        border="{'color': '#FFFFFF', 'width': 4}",
+    )
+    image = ImageGenerateRequest(
+        endpoint_url="https://example.com/v1/images/generations",
+        prompt="test",
+        headers="{'x-test': 'value'}",
+        extra_body='{"seed": 1}',
+    )
+
+    assert video.glow_outline == {"color": "#FFFFFF", "size": 10}
+    assert video.mask == {"type": "circle"}
+    assert captions.border == {"color": "#FFFFFF", "width": 4}
+    assert image.headers == {"x-test": "value"}
+    assert image.extra_body == {"seed": 1}
+
+
 def test_non_blank_optional_object_string_remains_invalid():
     with pytest.raises(ValidationError):
         TextAdd(
@@ -78,6 +133,29 @@ def test_text_endpoint_accepts_dify_blank_optional_objects():
             "duration": "1s",
             "border": "",
             "clip_settings": "",
+        },
+    )
+
+    assert response.status_code == 404
+    assert "草稿不存在" in response.json()["detail"]
+
+
+def test_text_endpoint_accepts_dify_python_dictionary_strings():
+    response = TestClient(app).post(
+        "/drafts/codex-nonexistent/texts",
+        json={
+            "text": "提示文字",
+            "start": "0s",
+            "duration": "1s",
+            "text_gradient": (
+                "{'colors': ['#FFBF17', '#2D5094'], 'alphas': [1, 1], "
+                "'percents': [0.949115, 0.283923], 'angle': 0, 'mode': 'all'}"
+            ),
+            "border": "{'color': '#FFFFFF', 'width': 4, 'alpha': 0.85}",
+            "clip_settings": (
+                "{'transform_x': 0.65, 'transform_y': 0.87, "
+                "'scale_x': 1, 'scale_y': 1}"
+            ),
         },
     )
 

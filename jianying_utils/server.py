@@ -13,6 +13,7 @@ import logging
 import os
 import uuid
 import re
+import ast
 import base64
 import binascii
 import hashlib
@@ -651,10 +652,25 @@ START_TIME_US_DESC = "起始时间，单位微秒（μs）。1 秒 = 1,000,000 �
 TIME_OFFSET_DESC = f"相对片段起点的时间偏移。{TIME_VALUE_DESC}"
 
 
-def _blank_optional_object_to_none(value: Any) -> Any:
-    """Treat Dify's blank optional object values as omitted."""
-    if isinstance(value, str) and not value.strip():
+def _parse_optional_object(value: Any) -> Any:
+    """Normalize optional object fields stringified by Dify API tools."""
+    if not isinstance(value, str):
+        return value
+
+    value = value.strip()
+    if not value:
         return None
+
+    try:
+        parsed = _json.loads(value)
+    except (TypeError, ValueError):
+        try:
+            parsed = ast.literal_eval(value)
+        except (SyntaxError, ValueError):
+            return value
+
+    if isinstance(parsed, dict):
+        return parsed
     return value
 
 
@@ -714,10 +730,11 @@ class VideoAdd(BaseModel):
 
     _normalize_blank_optional_objects = field_validator(
         "clip_settings",
+        "glow_outline",
         "mask",
         "background_filling",
         mode="before",
-    )(_blank_optional_object_to_none)
+    )(_parse_optional_object)
 
 class VideoBatch(BaseModel):
     video_infos: List[Dict[str, Any]] = Field(
@@ -830,7 +847,7 @@ class TextAdd(BaseModel):
         "shadow",
         "clip_settings",
         mode="before",
-    )(_blank_optional_object_to_none)
+    )(_parse_optional_object)
 
 class CaptionsAdd(BaseModel):
     model_config = {
@@ -891,7 +908,7 @@ class CaptionsAdd(BaseModel):
         "shadow",
         "clip_settings",
         mode="before",
-    )(_blank_optional_object_to_none)
+    )(_parse_optional_object)
 
 class EffectAdd(BaseModel):
     model_config = {
@@ -1101,6 +1118,12 @@ class ImageGenerateRequest(BaseModel):
     max_retries: int = Field(2, description="上游网络失败重试次数，最大 5")
     headers: Optional[Dict[str, str]] = Field(None, description="额外上游请求头")
     extra_body: Optional[Dict[str, Any]] = Field(None, description="透传给上游的额外 JSON 字段")
+
+    _normalize_optional_objects = field_validator(
+        "headers",
+        "extra_body",
+        mode="before",
+    )(_parse_optional_object)
 
 class ImageGenerateJobRequest(ImageGenerateRequest):
     client_job_key: Optional[str] = Field(None, description="客户端幂等键；相同键会复用已有任务")
