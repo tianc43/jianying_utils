@@ -317,7 +317,13 @@ RESPONSE_SCHEMAS = {
                 "type": "object",
                 "properties": {
                     "job_id": {"type": "string", "description": "图片生成任务 ID"},
-                    "status": {"type": "string", "description": "任务状态"}
+                    "status": {"type": "string", "description": "任务状态"},
+                    "terminal": {"type": "boolean", "description": "是否为终态"},
+                    "retryable": {"type": "boolean", "description": "调用方是否应继续重试当前任务"},
+                    "error": {"type": "string", "description": "永久失败原因"},
+                    "failure_code": {"type": "string", "description": "可供工作流判断的永久失败码"},
+                    "safe_retry_used": {"type": "boolean", "description": "是否已使用安全提示词重试"},
+                    "original_job_id": {"type": "string", "description": "触发安全重试的原始任务 ID"}
                 }
             }
         ]

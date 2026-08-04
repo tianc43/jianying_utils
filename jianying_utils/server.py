@@ -1131,6 +1131,8 @@ class ImageGenerateJobRequest(ImageGenerateRequest):
 class ImageGenerateJobWaitRequest(ImageGenerateRequest):
     client_job_key: Optional[str] = Field(None, description="客户端幂等键；为空时按请求体生成稳定键")
     wait_timeout_seconds: int = Field(0, ge=0, le=10, description="本次请求最多等待秒数；建议 Dify 使用 0 并依赖 HTTP 节点重试轮询")
+    safe_prompt: Optional[str] = Field(None, description="内容策略拒绝时用于单次安全重试的替代提示词")
+    safe_retry_count: int = Field(0, ge=0, le=1, description="内容策略拒绝后的安全提示词重试次数，最大 1")
 
 class ImageGenerateBatchJobRequest(BaseModel):
     items: List[ImageGenerateJobRequest] = Field(default_factory=list, description="图片生成任务请求列表")
@@ -1211,6 +1213,12 @@ class ImageGenerateBatchJobResponse(BaseModel):
 class ImageGenerateJobWaitResponse(ImageGenerateResponse):
     job_id: str = Field("", description="图片生成任务 ID")
     status: str = Field("succeeded", description="任务状态")
+    terminal: bool = Field(True, description="是否为终态；queued/running 仍使用 HTTP 425")
+    retryable: bool = Field(False, description="调用方是否应继续重试当前任务")
+    error: str = Field("", description="永久失败原因")
+    failure_code: str = Field("", description="可供工作流判断的永久失败码")
+    safe_retry_used: bool = Field(False, description="是否已使用安全提示词重试")
+    original_job_id: str = Field("", description="触发安全重试的原始任务 ID")
 
 class TTSVoicesResponse(BaseModel):
     success: bool = Field(True, description="操作是否成功")
@@ -1941,27 +1949,75 @@ def material_generate_image_job_wait(body: ImageGenerateJobWaitRequest):
     client_job_key = body.client_job_key or _default_image_client_job_key(body)
     deadline = time.monotonic() + max(0, min(body.wait_timeout_seconds, 10))
     job = _submit_image_job(body, client_job_key)
+    safe_retry_used = False
+    original_job_id = ""
+
+    def failure_code(error: str) -> str:
+        value = str(error or "")
+        match = re.search(r'"code"\s*:\s*"([^"\\]+)"', value)
+        if match:
+            return match.group(1)
+        if "content_policy_violation" in value:
+            return "content_policy_violation"
+        return "image_generation_failed"
 
     while True:
         status = job.get("status")
         if status == "succeeded":
             result = dict(job.get("result") or {})
-            result.update(job_id=job.get("job_id", ""), status=status)
+            result.update(
+                job_id=job.get("job_id", ""),
+                status=status,
+                terminal=True,
+                retryable=False,
+                error="",
+                failure_code="",
+                safe_retry_used=safe_retry_used,
+                original_job_id=original_job_id,
+            )
             return result
         if status == "failed":
-            raise HTTPException(502, {
+            error = str(job.get("error") or "图片生成任务失败")
+            code = failure_code(error)
+            safe_prompt = str(body.safe_prompt or "").strip()
+            if (
+                not safe_retry_used
+                and body.safe_retry_count == 1
+                and safe_prompt
+                and code == "content_policy_violation"
+            ):
+                original_job_id = str(job.get("job_id") or "")
+                safe_retry_used = True
+                safe_body = body.model_copy(update={
+                    "prompt": safe_prompt,
+                    "safe_prompt": None,
+                    "safe_retry_count": 0,
+                    "client_job_key": None,
+                })
+                job = _submit_image_job(safe_body, f"{client_job_key}::safe-retry-1")
+                continue
+            return {
                 "success": False,
                 "job_id": job.get("job_id", ""),
                 "status": status,
+                "terminal": True,
+                "retryable": False,
                 "message": job.get("message") or "图片生成任务失败",
-                "error": job.get("error") or "图片生成任务失败",
-            })
+                "error": error,
+                "failure_code": code,
+                "safe_retry_used": safe_retry_used,
+                "original_job_id": original_job_id,
+            }
         if time.monotonic() >= deadline:
             raise HTTPException(_IMAGE_JOB_POLL_STATUS, {
                 "success": False,
                 "job_id": job.get("job_id", ""),
                 "status": status,
                 "message": job.get("message") or "图片生成任务未完成",
+                "terminal": False,
+                "retryable": True,
+                "safe_retry_used": safe_retry_used,
+                "original_job_id": original_job_id,
             })
         time.sleep(0.5)
         job = _read_image_job(str(job["job_id"]))
